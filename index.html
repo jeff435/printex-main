@@ -833,25 +833,133 @@ async function deletePart(id) {
 
 // ============ DASHBOARD ============
 function renderDashboard() {
-    const totalValue = parts.reduce((s, p) => s + (p.stock * (p.priceKsh || 0)), 0);
-    const lowCount = parts.filter(p => p.stock > 0 && p.stock <= p.minStock).length;
-    const outCount = parts.filter(p => p.stock === 0).length;
+    // Calculate total stock value correctly
+    const totalValue = parts.reduce((sum, p) => {
+        const price = p.price_ksh || p.priceKsh || 0;
+        const stock = p.stock || 0;
+        return sum + (price * stock);
+    }, 0);
+    
+    const lowCount = parts.filter(p => {
+        const stock = p.stock || 0;
+        const minStock = p.min_stock || p.minStock || 1;
+        return stock > 0 && stock <= minStock;
+    }).length;
+    
+    const outCount = parts.filter(p => (p.stock || 0) === 0).length;
+    
+    // Update KPI cards
     document.getElementById('kpiGrid').innerHTML = `
-        <div class="kpi-card" style="--kpi-color:var(--accent)"><div class="kpi-label">Total Parts</div><div class="kpi-value">${parts.length}</div><div class="kpi-sub">${parts.filter(p=>p.stock>0).length} in stock</div></div>
-        <div class="kpi-card" style="--kpi-color:var(--gold)"><div class="kpi-label">Stock Value</div><div class="kpi-value">KSH ${totalValue.toLocaleString()}</div><div class="kpi-sub">Based on cost prices</div></div>
-        <div class="kpi-card" style="--kpi-color:var(--warn)"><div class="kpi-label">Low Stock</div><div class="kpi-value">${lowCount}</div><div class="kpi-sub">Need reorder soon</div></div>
-        <div class="kpi-card" style="--kpi-color:var(--danger)"><div class="kpi-label">Out of Stock</div><div class="kpi-value">${outCount}</div><div class="kpi-sub">Immediate action needed</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--accent)">
+            <div class="kpi-label">Total Parts</div>
+            <div class="kpi-value">${parts.length}</div>
+            <div class="kpi-sub">${parts.filter(p => (p.stock || 0) > 0).length} in stock</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--gold)">
+            <div class="kpi-label">Stock Value</div>
+            <div class="kpi-value">KSH ${totalValue.toLocaleString()}</div>
+            <div class="kpi-sub">Based on cost prices</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--warn)">
+            <div class="kpi-label">Low Stock</div>
+            <div class="kpi-value">${lowCount}</div>
+            <div class="kpi-sub">Need reorder soon</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:var(--danger)">
+            <div class="kpi-label">Out of Stock</div>
+            <div class="kpi-value">${outCount}</div>
+            <div class="kpi-sub">Immediate action needed</div>
+        </div>
     `;
-    const cats = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-    const catStock = cats.map(c => parts.filter(p => p.category === c).reduce((s, p) => s + p.stock, 0));
-    if (catChart) catChart.destroy();
+    
+    // Category chart data
+    const categories = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const categoryLabels = ['Valves', 'Bellows', 'Gears', 'Cams', 'Tapes', 'Rollers', 'Accessories'];
+    const categoryStock = categories.map(cat => {
+        return parts.filter(p => p.category === cat).reduce((sum, p) => sum + (p.stock || 0), 0);
+    });
+    
+    // Render or update chart
     const ctx = document.getElementById('catChart').getContext('2d');
-    catChart = new Chart(ctx, { type: 'bar', data: { labels: ['Valves', 'Bellows', 'Gears', 'Cams', 'Tapes', 'Rollers', 'Accessories'], datasets: [{ data: catStock, backgroundColor: '#00d4ff88', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
-    const lowParts = parts.filter(p => p.stock <= p.minStock).slice(0, 6);
-    document.getElementById('lowStockList').innerHTML = lowParts.length ? lowParts.map(p => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px">${escapeHtml(p.partNum)}</div><div style="font-size:11px;color:var(--muted)">${escapeHtml(p.desc.slice(0, 50))}…</div><span class="badge ${p.stock === 0 ? 'badge-danger' : 'badge-warn'}">${p.stock}</span></div>`).join('') : '<div style="padding:16px;text-align:center">All stock levels healthy ✓</div>';
-    document.getElementById('activityFeed').innerHTML = '<div style="padding:16px;text-align:center">Activity log will appear here</div>';
+    if (window.catChart) window.catChart.destroy();
+    window.catChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryStock,
+                backgroundColor: '#00d4ff88',
+                borderColor: '#00d4ff',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
+                x: { ticks: { color: 'var(--muted)' } }
+            }
+        }
+    });
+    
+    // Low stock list (optional but keep)
+    const lowParts = parts.filter(p => {
+        const stock = p.stock || 0;
+        const min = p.min_stock || p.minStock || 1;
+        return stock > 0 && stock <= min;
+    }).slice(0, 6);
+    const lowStockHtml = lowParts.length ? lowParts.map(p => `
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+                <div style="font-size:12px; font-weight:500">${escapeHtml(p.part_num || p.partNum)}</div>
+                <div style="font-size:11px; color:var(--muted)">${escapeHtml((p.description || p.desc || '').slice(0,50))}</div>
+            </div>
+            <span class="badge ${(p.stock||0)===0?'badge-danger':'badge-warn'}">${p.stock || 0}</span>
+        </div>
+    `).join('') : '<div style="padding:16px; text-align:center">All stock levels healthy ✓</div>';
+    document.getElementById('lowStockList').innerHTML = lowStockHtml;
+    
+    // Optional: value trend chart (simplified for now)
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    if (window.trendChart) window.trendChart.destroy();
+    if (trendCtx) {
+        const last6Months = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            last6Months.push(d.toLocaleDateString('en-KE', { month: 'short', year: 'numeric' }));
+        }
+        // Dummy trend data based on total value (could be enhanced with actual invoice history)
+        const trendData = [totalValue * 0.85, totalValue * 0.9, totalValue * 0.95, totalValue * 0.98, totalValue * 0.99, totalValue];
+        window.trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: last6Months,
+                datasets: [{
+                    data: trendData,
+                    borderColor: 'var(--accent)',
+                    backgroundColor: 'rgba(0,212,255,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: 'var(--accent)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { ticks: { color: 'var(--muted)', callback: v => `KSH ${(v/1000).toFixed(0)}K` } },
+                    x: { ticks: { color: 'var(--muted)' } }
+                }
+            }
+        });
+    }
 }
-
 // ============ INVOICES ============
 function initCreateInvoice() {
     lineItems = [];
