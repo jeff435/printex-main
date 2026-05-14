@@ -708,24 +708,38 @@ function renderInventory() {
     const body = document.getElementById('invBody');
     if (!parts.length) { body.innerHTML = '<tr><td colspan="11">Loading...</td></tr>'; return; }
     body.innerHTML = parts.map(p => {
-        const img = p.image || getCatImage(p.category, p.id);
-        const status = p.stock === 0 ? 'Out of Stock' : (p.stock <= p.minStock ? 'Low Stock' : 'In Stock');
-        const statusClass = p.stock === 0 ? 'badge-danger' : (p.stock <= p.minStock ? 'badge-warn' : 'badge-success');
+        const partNum = p.part_num || p.partNum || 'N/A';
+        const description = p.description || p.desc || 'No description';
+        const price = p.price_ksh || p.priceKsh || 0;
+        const minStock = p.min_stock || p.minStock || 1;
+        const stock = p.stock || 0;
+        const category = p.category || 'G';
+        const supplier = p.supplier || '';
+        const location = p.location || '';
+        const img = p.image || getCatImage(category, p.id);
+        
+        const status = stock === 0 ? 'Out of Stock' : (stock <= minStock ? 'Low Stock' : 'In Stock');
+        const statusClass = stock === 0 ? 'badge-danger' : (stock <= minStock ? 'badge-warn' : 'badge-success');
+        
         return `<tr>
-            <td><img src="${img}" class="part-thumb" onerror="this.src='${getCatImage(p.category,p.id)}'"/></td>
-            <td><div class="part-num">${escapeHtml(p.partNum)}</div></td>
-            <td><div class="part-desc">${escapeHtml(p.desc)}</div></td>
-            <td><span class="badge badge-cat-${p.category}">${p.category}</span></td>
-            <td><div class="stock-ctrl"><button class="stock-btn" onclick="adjustStock(${p.id},-1)">−</button><span class="stock-num">${p.stock}</span><button class="stock-btn" onclick="adjustStock(${p.id},1)">+</button></div></td>
-            <td>${p.minStock}</td>
-            <td><span class="price-ksh">KSH ${(p.priceKsh || 0).toLocaleString()}</span></td>
-            <td>${escapeHtml(p.supplier || '')}</td>
-            <td>${escapeHtml(p.location || '')}</td>
+            <td><img src="${img}" class="part-thumb" onerror="this.src='${getCatImage(category, p.id)}'"/></td>
+            <td><div class="part-num">${escapeHtml(partNum)}</div></td>
+            <td><div class="part-desc">${escapeHtml(description)}</div></td>
+            <td><span class="badge badge-cat-${category}">${category}</span></td>
+            <td><div class="stock-ctrl"><button class="stock-btn" onclick="adjustStock(${p.id},-1)">−</button><span class="stock-num">${stock}</span><button class="stock-btn" onclick="adjustStock(${p.id},1)">+</button></div></td>
+            <td>${minStock}</td>
+            <td><span class="price-ksh">KSH ${price.toLocaleString()}</span></td>
+            <td>${escapeHtml(supplier)}</td>
+            <td>${escapeHtml(location)}</td>
             <td><span class="badge ${statusClass}">${status}</span></td>
             <td><button class="btn btn-outline btn-xs" onclick="openEditPart(${p.id})"><i class="fa fa-edit"></i></button> <button class="btn btn-danger btn-xs" onclick="deletePart(${p.id})"><i class="fa fa-trash"></i></button></td>
         </tr>`;
     }).join('');
-    const lowCount = parts.filter(p => p.stock > 0 && p.stock <= p.minStock).length;
+    const lowCount = parts.filter(p => {
+        const s = p.stock || 0;
+        const m = p.min_stock || p.minStock || 1;
+        return s > 0 && s <= m;
+    }).length;
     document.getElementById('lowBadge').textContent = lowCount;
 }
 
