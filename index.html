@@ -45,41 +45,18 @@ img{display:block;max-width:100%;border-radius:6px}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-
-/* ── LAYOUT ── */
 #app{display:flex;min-height:100vh}
-#sidebar{
-  width:230px;min-width:230px;background:var(--bg2);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  position:fixed;top:0;left:0;height:100vh;z-index:100;
-  transition:transform 0.3s ease;
-}
+#sidebar{width:230px;min-width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform 0.3s ease;}
 #main{margin-left:230px;flex:1;display:flex;flex-direction:column;min-width:0}
-#topbar{
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:0 24px;height:56px;display:flex;align-items:center;
-  justify-content:space-between;position:sticky;top:0;z-index:50;
-}
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
 #content{padding:24px;flex:1}
-
-/* ── SIDEBAR ── */
 .brand{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
 .brand-logo{display:flex;align-items:center;gap:10px}
-.brand-icon{
-  width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-mono);font-weight:700;font-size:14px;color:#fff;
-  box-shadow:0 0 20px var(--accent-glow);
-}
+.brand-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:14px;color:#fff;box-shadow:0 0 20px var(--accent-glow);}
 .brand-name{font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:0.06em;line-height:1.2}
 .brand-sub{font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-top:2px}
 .nav-section{padding:12px 10px 4px;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;font-weight:500}
-.nav-item{
-  display:flex;align-items:center;gap:10px;padding:9px 14px;margin:1px 8px;
-  border-radius:var(--r);color:var(--muted);font-size:13px;font-weight:500;
-  cursor:pointer;transition:all var(--transition);
-}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;margin:1px 8px;border-radius:var(--r);color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--transition);}
 .nav-item:hover{background:var(--surface);color:var(--text)}
 .nav-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(0,212,255,0.2)}
 .nav-item i{width:18px;text-align:center;font-size:14px}
@@ -89,8 +66,6 @@ img{display:block;max-width:100%;border-radius:6px}
 .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
 .user-name{font-size:12px;font-weight:500}
 .user-role{font-size:10px;color:var(--muted)}
-
-/* ── TOPBAR ── */
 .topbar-left{display:flex;align-items:center;gap:12px}
 .menu-btn{display:none;background:none;color:var(--text);font-size:18px;padding:6px}
 .page-title-bar{font-family:var(--font-display);font-weight:700;font-size:16px}
@@ -99,8 +74,6 @@ img{display:block;max-width:100%;border-radius:6px}
 .icon-btn:hover{color:var(--text);border-color:var(--border2)}
 .sync-dot{width:8px;height:8px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.9)}}
-
-/* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--transition);border:none}
 .btn i{font-size:12px}
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 12px var(--accent-glow)}
@@ -114,14 +87,10 @@ img{display:block;max-width:100%;border-radius:6px}
 .btn-sm{padding:5px 11px;font-size:12px}
 .btn-xs{padding:3px 8px;font-size:11px}
 .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-
-/* ── CARDS ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px}
 .card-sm{padding:14px}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .card-title{font-family:var(--font-display);font-weight:700;font-size:14px}
-
-/* ── FORMS ── */
 .field{margin-bottom:14px}
 .field label{display:block;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px}
 .input{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--r);padding:8px 12px;width:100%;transition:border-color var(--transition)}
@@ -132,8 +101,6 @@ img{display:block;max-width:100%;border-radius:6px}
 .form-row{display:grid;gap:12px}
 .form-row.col2{grid-template-columns:1fr 1fr}
 .form-row.col3{grid-template-columns:1fr 1fr 1fr}
-
-/* ── BADGES ── */
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.04em}
 .badge-success{background:var(--success-dim);color:var(--success)}
 .badge-warn{background:var(--warn-dim);color:var(--warn)}
@@ -147,8 +114,6 @@ img{display:block;max-width:100%;border-radius:6px}
 .badge-cat-E{background:rgba(218,119,242,0.15);color:var(--cat-e)}
 .badge-cat-F{background:rgba(247,131,172,0.15);color:var(--cat-f)}
 .badge-cat-G{background:rgba(99,230,190,0.15);color:var(--cat-g)}
-
-/* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;min-width:700px}
 thead th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;white-space:nowrap;border-bottom:1px solid var(--border)}
@@ -160,16 +125,12 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .part-num{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
 .part-desc{font-size:12px;max-width:260px;line-height:1.4}
 .price-ksh{font-family:var(--font-mono);color:var(--gold);font-size:12px}
-
-/* ── STOCK BUTTONS ── */
 .stock-ctrl{display:flex;align-items:center;gap:4px}
 .stock-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition)}
 .stock-btn:hover{border-color:var(--accent);color:var(--accent)}
 .stock-num{font-family:var(--font-mono);font-size:13px;font-weight:600;min-width:30px;text-align:center}
 .stock-low{color:var(--warn)}
 .stock-out{color:var(--danger)}
-
-/* ── KPI CARDS ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;transition:all var(--transition)}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-color,var(--accent))}
@@ -181,8 +142,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .kpi-trend{display:flex;align-items:center;gap:4px;font-size:11px;margin-top:6px}
 .trend-up{color:var(--success)}
 .trend-down{color:var(--danger)}
-
-/* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.25s}
 .modal-overlay.open{opacity:1;pointer-events:auto}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-xl);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;transform:scale(0.95) translateY(10px);transition:transform 0.25s}
@@ -193,16 +152,12 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .modal-close:hover{color:var(--danger);border-color:var(--danger)}
 .modal-body{padding:24px}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
-
-/* ── TOAST ── */
 #toastZone{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
 .toast{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 18px;font-size:13px;max-width:340px;display:flex;align-items:center;gap:10px;pointer-events:auto;animation:toastIn 0.3s ease;box-shadow:var(--shadow)}
 .toast.success{border-color:var(--success);background:var(--success-dim)}
 .toast.error{border-color:var(--danger);background:var(--danger-dim)}
 .toast.warn{border-color:var(--warn);background:var(--warn-dim)}
 @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
-
-/* ── DASHBOARD ── */
 .dash-charts{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px}
 .dash-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .chart-wrap{position:relative;height:220px}
@@ -211,8 +166,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .activity-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .activity-text{font-size:12px;line-height:1.5}
 .activity-time{font-size:10px;color:var(--dim);margin-top:2px}
-
-/* ── INVOICE ── */
 .inv-table{width:100%;border-collapse:collapse;margin:16px 0}
 .inv-table th{background:var(--bg3);padding:8px 12px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
 .inv-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
@@ -225,8 +178,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .autocomplete-item:hover{background:var(--accent-glow);color:var(--accent)}
 .autocomplete-item:last-child{border-bottom:none}
 .autocomplete-thumb{width:30px;height:30px;border-radius:4px;object-fit:cover}
-
-/* ── PRINT STYLES ── */
 @media print {
   #sidebar,#topbar,.btn,#toastZone,.no-print{display:none!important}
   #main{margin-left:0!important}
@@ -239,16 +190,10 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 }
 #printInvoiceArea{display:none}
 @media print{#printInvoiceArea{display:block!important;position:absolute;top:0;left:0;width:100%}}
-
-/* ── PARTS IMAGE ── */
 .cat-icon-img{width:44px;height:44px;border-radius:8px;object-fit:contain;background:var(--bg3);border:1px solid var(--border);padding:4px}
-
-/* ── REPORTS ── */
 .report-stat{text-align:center;padding:20px;background:var(--bg3);border-radius:var(--r)}
 .report-stat-num{font-family:var(--font-display);font-size:32px;font-weight:800}
 .report-stat-label{font-size:12px;color:var(--muted);margin-top:4px}
-
-/* ── LOGIN ── */
 #loginScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
 .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-xl);padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
 .login-logo{text-align:center;margin-bottom:32px}
@@ -256,8 +201,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .login-title{font-family:var(--font-display);font-size:22px;font-weight:800;text-align:center}
 .login-sub{font-size:13px;color:var(--muted);text-align:center;margin-top:4px}
 .login-error{background:var(--danger-dim);border:1px solid var(--danger);color:var(--danger);padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:16px;display:none}
-
-/* ── SECTION CONTROL BAR ── */
 .section-controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .search-wrap{position:relative;flex:1;min-width:180px}
 .search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px}
@@ -265,8 +208,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .search-input:focus{border-color:var(--accent);outline:none}
 .filter-chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all var(--transition)}
 .filter-chip.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
-
-/* ── SETTINGS ── */
 .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg3);border-radius:var(--r)}
 .setting-label{font-size:13px;font-weight:500}
@@ -275,10 +216,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .toggle.on{background:var(--accent)}
 .toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform 0.2s}
 .toggle.on::after{transform:translateX(18px)}
-
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE — TABLET 900px
-═══════════════════════════════════════════════════════ */
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .dash-charts{grid-template-columns:1fr}
@@ -287,12 +224,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
   #aiLayout{grid-template-columns:1fr!important}
   #createInvLayout{grid-template-columns:1fr!important}
 }
-
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE — MOBILE 767px
-═══════════════════════════════════════════════════════ */
 @media(max-width:767px){
-  /* ── LAYOUT ── */
   #sidebar{transform:translateX(-100%);z-index:200;width:260px}
   #sidebar.open{transform:none;box-shadow:var(--shadow-lg)}
   #main{margin-left:0;padding-bottom:64px}
@@ -386,6 +318,23 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .ai-ctx-item{background:var(--bg3);border-radius:var(--r);padding:8px 10px;text-align:center}
 .ai-ctx-num{font-family:var(--font-display);font-size:18px;font-weight:700}
 .ai-ctx-label{font-size:10px;color:var(--muted);margin-top:2px}
+@media(max-width:900px){#aiLayout{grid-template-columns:1fr}}
+[title]{position:relative}
+[title]:hover::after{
+  content:attr(title);
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#111c2a;color:#e8f4fd;font-size:11px;white-space:nowrap;
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border2);
+  pointer-events:none;z-index:9999;font-family:var(--font-body);font-weight:400;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);max-width:260px;white-space:normal;text-align:center;
+  line-height:1.4;
+}
+[title]:hover::before{
+  content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#111c2a;pointer-events:none;z-index:9999;
+}
+input[title]:hover::after,select[title]:hover::after{display:none}
+input[title]:hover::before,select[title]:hover::before{display:none}
 </style>
 </head>
 <body>
@@ -393,11 +342,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 <!-- LOGIN / SIGNUP SCREEN -->
 <div id="loginScreen" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
   <div class="login-card" style="width:100%;max-width:420px;margin:auto">
-    <div class="login-logo">
-      <div class="login-icon">PX</div>
-      <div class="login-title">PRINTEX ENGINEERS</div>
-      <div class="login-sub">Inventory Management System</div>
-    </div>
+    <div class="login-logo"><div class="login-icon">PX</div><div class="login-title">PRINTEX ENGINEERS</div><div class="login-sub">Inventory Management System</div></div>
     <div style="display:flex;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:20px">
       <button id="tabLoginBtn" onclick="switchTab('login')" style="flex:1;padding:9px;border-radius:7px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;cursor:pointer;">Sign In</button>
       <button id="tabSignupBtn" onclick="switchTab('signup')" style="flex:1;padding:9px;border-radius:7px;font-size:13px;font-weight:500;background:transparent;color:var(--muted);border:none;cursor:pointer;">Create Account</button>
@@ -449,7 +394,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
     </div>
     <div class="page" id="page-invoices">
       <div class="section-controls"><div class="search-wrap"><i class="fa fa-search"></i><input class="search-input" id="invListSearch" placeholder="Search invoices..." oninput="filterInvoiceList()"/></div><button class="btn btn-primary btn-sm" onclick="showPage('createInvoice',document.querySelectorAll('.nav-item')[4])">New Invoice</button></div>
-      <div class="table-wrap"><table id="invoiceListTable"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Grand Total</th><th>Type</th><th>Actions</th></tr></thead><tbody id="invoiceListBody"></tbody></table></div>
+      <div class="table-wrap"><table id="invoiceListTable"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Grand Total</th><th>Type</th><th>Actions</th></tr></thead><tbody id="invoiceListBody"></tbody></tr></div>
     </div>
     <div class="page" id="page-createInvoice">
       <div style="display:grid;grid-template-columns:1fr 380px;gap:20px" id="createInvLayout">
@@ -464,7 +409,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
         </div>
       </div>
     </div>
-    <div class="page" id="page-reports"><div class="kpi-grid" id="reportKpis"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div class="card"><div class="card-header">Out of Stock</div><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Description</th><th>Min Stock</th></tr></thead><tbody id="outStockBody"></tbody></table></div></div><div class="card"><div class="card-header">Low Stock</div><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Description</th><th>Stock</th></tr></thead><tbody id="lowStockBody"></tbody></table></div></div></div></div>
+    <div class="page" id="page-reports"><div class="kpi-grid" id="reportKpis"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div class="card"><div class="card-header">Out of Stock</div><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Description</th><th>Min Stock</th></tr></thead><tbody id="outStockBody"></tbody></table></div></div><div class="card"><div class="card-header">Low Stock</div><div class="table-wrap"><tr><thead><tr><th>SKU</th><th>Description</th><th>Stock</th></tr></thead><tbody id="lowStockBody"></tbody></table></div></div></div></div>
     <div class="page" id="page-settings"><div class="card"><div class="card-title">Appearance</div><div class="settings-grid"><div class="setting-item"><div><div class="setting-label">Dark Mode</div></div><div class="toggle" id="darkToggle" onclick="toggleTheme()"></div></div></div></div></div>
     <div class="page" id="page-ai"><div style="padding:20px;text-align:center">AI Assistant ready — Add API key in Settings</div></div>
   </div>
@@ -486,6 +431,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 // ============ BACKEND API CONFIGURATION ============
 const API_URL = 'https://printex-backend-new.onrender.com';
 let authToken = localStorage.getItem('token') || null;
+let currentUser = null;
 
 async function apiCall(endpoint, method = 'GET', body = null) {
     const headers = { 'Content-Type': 'application/json' };
@@ -500,39 +446,153 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     return response.json();
 }
 
-// ============ FULL 128 PARTS DATABASE ============
+// ============ COMPLETE 128 PARTS DATABASE ============
 const DEFAULT_PARTS = [
+// CATEGORY A - Valves & Cylinders (17)
 {id:1,category:'A',partNum:'M2.184.1111/05',desc:'5/2 way solenoid control valve for Heidelberg SM series',stock:20,minStock:5,priceKsh:14850,supplier:'Heidelberg',location:'Warehouse A1'},
 {id:2,category:'A',partNum:'M2.184.1121',desc:'3/2 way normally closed solenoid valve',stock:10,minStock:5,priceKsh:14850,supplier:'Heidelberg',location:'Warehouse A1'},
 {id:3,category:'A',partNum:'G2.184.0060',desc:'Pneumatic feeder stop assembly with bracket',stock:5,minStock:3,priceKsh:15200,supplier:'Heidelberg',location:'Warehouse A2'},
 {id:4,category:'A',partNum:'92.184.011',desc:'Complete Festo valve unit with flow control',stock:0,minStock:2,priceKsh:15000,supplier:'Festo',location:'Warehouse A2'},
 {id:5,category:'A',partNum:'61.184.1133',desc:'Pneumatic vibrator control valve',stock:5,minStock:3,priceKsh:15200,supplier:'SMC',location:'Warehouse A1'},
-{id:6,category:'B',partNum:'BL-SM52',desc:'Rubber bellows for SM52 press feeder',stock:22,minStock:10,priceKsh:3000,supplier:'PrintParts',location:'Warehouse C1'},
-{id:7,category:'B',partNum:'BL-SM74',desc:'Heavy-duty bellows for SM74 press',stock:24,minStock:10,priceKsh:4250,supplier:'PrintParts',location:'Warehouse C1'},
-{id:8,category:'B',partNum:'BL-CD74',desc:'Bellows assembly for CD74 press',stock:19,minStock:10,priceKsh:4950,supplier:'PrintParts',location:'Warehouse C1'},
-{id:9,category:'B',partNum:'AP-SM52',desc:'Complete autoplate system for SM52',stock:20,minStock:10,priceKsh:45000,supplier:'Heidelberg',location:'Warehouse D1'},
-{id:10,category:'B',partNum:'CPL-CLIPS',desc:'Complete set of autoplate clips (8 pcs)',stock:7,minStock:5,priceKsh:8500,supplier:'Heidelberg',location:'Warehouse D1'},
-{id:11,category:'C',partNum:'M2.006.001',desc:'Worm gear for feeder drive',stock:12,minStock:5,priceKsh:5500,supplier:'GearMaster',location:'Warehouse G1'},
-{id:12,category:'C',partNum:'FT-TAPE',desc:'Feed table tapes for CD/SM102 (set of 3)',stock:0,minStock:5,priceKsh:9500,supplier:'PrintSupplies',location:'Warehouse G2'},
-{id:13,category:'D',partNum:'F-229817',desc:'Cam follower for CD74/CD102',stock:24,minStock:10,priceKsh:14750,supplier:'CamTech',location:'Warehouse K1'},
-{id:14,category:'E',partNum:'M2.015.848f',desc:'Suction tapes for sheet transport (set of 4)',stock:49,minStock:20,priceKsh:4800,supplier:'TapeMaster',location:'Warehouse L1'},
-{id:15,category:'F',partNum:'INK-ROL',desc:'Ink roller polyurethane 70 Shore A',stock:15,minStock:10,priceKsh:7500,supplier:'RollerTech',location:'Warehouse O1'},
-{id:16,category:'G',partNum:'ACC-BLADE-01',desc:'Replacement cutting blades for paper trimming, set of 5',stock:25,minStock:10,priceKsh:2500,supplier:'BladeMaster',location:'Warehouse X1'},
+{id:6,category:'A',partNum:'M2.184.1071/04',desc:'Complete feeder stop mechanism',stock:5,minStock:3,priceKsh:15200,supplier:'Heidelberg',location:'Warehouse A2'},
+{id:7,category:'A',partNum:'61.184.1311/01',desc:'5/2 way high-flow solenoid valve',stock:10,minStock:5,priceKsh:17250,supplier:'SMC',location:'Warehouse A1'},
+{id:8,category:'A',partNum:'98.184.1051',desc:'High-flow solenoid valve with diagnostics',stock:10,minStock:5,priceKsh:17250,supplier:'SMC',location:'Warehouse A1'},
+{id:9,category:'A',partNum:'00.580.4275/01',desc:'Double-acting pneumatic cylinder 80mm stroke',stock:1,minStock:2,priceKsh:32250,supplier:'Festo',location:'Warehouse B1'},
+{id:10,category:'A',partNum:'87.334.010',desc:'Compact pneumatic cylinder 50mm stroke',stock:1,minStock:2,priceKsh:18500,supplier:'Heidelberg',location:'Warehouse B1'},
+{id:11,category:'A',partNum:'M2.184.1131/05',desc:'Proportional control valve for ink flow',stock:3,minStock:2,priceKsh:22000,supplier:'Heidelberg',location:'Warehouse A1'},
+{id:12,category:'A',partNum:'00.580.3909/02',desc:'Pneumatic cylinder with integrated guide',stock:1,minStock:2,priceKsh:18250,supplier:'Festo',location:'Warehouse B1'},
+{id:13,category:'A',partNum:'F4.334.044',desc:'Compact pneumatic cylinder 40mm stroke',stock:1,minStock:2,priceKsh:18250,supplier:'Heidelberg',location:'Warehouse B1'},
+{id:14,category:'A',partNum:'87.334.007/01',desc:'Pneumatic cylinder with position feedback',stock:0,minStock:2,priceKsh:18250,supplier:'Heidelberg',location:'Warehouse B1'},
+{id:15,category:'A',partNum:'L2.007.531',desc:'Heavy-duty piston assembly',stock:1,minStock:1,priceKsh:65000,supplier:'Heidelberg',location:'Warehouse B2'},
+{id:16,category:'A',partNum:'00.580.3387/CD102',desc:'Pneumatic cylinder for CD102 press',stock:0,minStock:1,priceKsh:15400,supplier:'Festo',location:'Warehouse B1'},
+{id:17,category:'A',partNum:'61.184.1191',desc:'Solenoid valve manifold 8 stations',stock:1,minStock:1,priceKsh:29500,supplier:'SMC',location:'Warehouse A1'},
+// CATEGORY B - Bellows & Screws (16)
+{id:18,category:'B',partNum:'BL-SM52',desc:'Rubber bellows for SM52 press feeder',stock:22,minStock:10,priceKsh:3000,supplier:'PrintParts',location:'Warehouse C1'},
+{id:19,category:'B',partNum:'BL-SM74',desc:'Heavy-duty bellows for SM74 press',stock:24,minStock:10,priceKsh:4250,supplier:'PrintParts',location:'Warehouse C1'},
+{id:20,category:'B',partNum:'BL-CD74',desc:'Bellows assembly for CD74 press',stock:19,minStock:10,priceKsh:4950,supplier:'PrintParts',location:'Warehouse C1'},
+{id:21,category:'B',partNum:'BL-CD102',desc:'Extended length bellows for CD102',stock:6,minStock:5,priceKsh:6050,supplier:'PrintParts',location:'Warehouse C1'},
+{id:22,category:'B',partNum:'BL-PM74',desc:'Economy bellows for PM74',stock:0,minStock:5,priceKsh:3795,supplier:'PrintParts',location:'Warehouse C1'},
+{id:23,category:'B',partNum:'AP-SM52',desc:'Complete autoplate system for SM52',stock:20,minStock:10,priceKsh:45000,supplier:'Heidelberg',location:'Warehouse D1'},
+{id:24,category:'B',partNum:'CPL-CLIPS',desc:'Complete set of autoplate clips (8 pcs)',stock:7,minStock:5,priceKsh:8500,supplier:'Heidelberg',location:'Warehouse D1'},
+{id:25,category:'B',partNum:'SGL-CLIPS',desc:'Single autoplate clips (pack of 4)',stock:17,minStock:10,priceKsh:4200,supplier:'Heidelberg',location:'Warehouse D1'},
+{id:26,category:'B',partNum:'F4.614.5565',desc:'Friction wheels for paper feed',stock:32,minStock:10,priceKsh:6150,supplier:'Heidelberg',location:'Warehouse D2'},
+{id:27,category:'B',partNum:'L2.030.421',desc:'Stainless steel grub screws (pack 100)',stock:20,minStock:15,priceKsh:1750,supplier:'Fasteners Ltd',location:'Warehouse E1'},
+{id:28,category:'B',partNum:'LCK-SCR',desc:'Locking screws with nylon patch (pack 50)',stock:11,minStock:10,priceKsh:2950,supplier:'Fasteners Ltd',location:'Warehouse E1'},
+{id:29,category:'B',partNum:'DMP-CD74',desc:'Damper adjusting screw assembly for CD74',stock:12,minStock:10,priceKsh:9075,supplier:'Heidelberg',location:'Warehouse E2'},
+{id:30,category:'B',partNum:'DMP-GEN',desc:'Universal damper adjusting screws (10 pack)',stock:2,minStock:5,priceKsh:7500,supplier:'Heidelberg',location:'Warehouse E2'},
+{id:31,category:'B',partNum:'DMP-SM52',desc:'Damper adjusting screws for SM52 (6 pack)',stock:5,minStock:5,priceKsh:6800,supplier:'Heidelberg',location:'Warehouse E2'},
+{id:32,category:'B',partNum:'TORS-SPR',desc:'Torsional springs for autoplate (4 pack)',stock:10,minStock:5,priceKsh:4000,supplier:'SpringCo',location:'Warehouse F1'},
+{id:33,category:'B',partNum:'DS.196.2015',desc:'Technotrans dampening system controller',stock:8,minStock:5,priceKsh:12750,supplier:'Technotrans',location:'Warehouse F2'},
+// CATEGORY C - Gears & Suckers (11)
+{id:34,category:'C',partNum:'M2.006.001',desc:'Worm gear for feeder drive',stock:12,minStock:5,priceKsh:5500,supplier:'GearMaster',location:'Warehouse G1'},
+{id:35,category:'C',partNum:'42.006.029',desc:'Worm gear assembly with housing',stock:4,minStock:3,priceKsh:5800,supplier:'GearMaster',location:'Warehouse G1'},
+{id:36,category:'C',partNum:'FT-TAPE',desc:'Feed table tapes for CD/SM102 (set of 3)',stock:0,minStock:5,priceKsh:9500,supplier:'PrintSupplies',location:'Warehouse G2'},
+{id:37,category:'C',partNum:'BLK-CUP',desc:'Block cups for Muller Martin (pack 50)',stock:100,minStock:50,priceKsh:100,supplier:'Muller',location:'Warehouse H1'},
+{id:38,category:'C',partNum:'42.016.072',desc:'Feeder suckers with stem (pack 100)',stock:204,minStock:100,priceKsh:100,supplier:'SuckerPro',location:'Warehouse H1'},
+{id:39,category:'C',partNum:'CUP-SUCK',desc:'Cup suckers 20x6x13mm (pack 200)',stock:430,minStock:200,priceKsh:350,supplier:'SuckerPro',location:'Warehouse H2'},
+{id:40,category:'C',partNum:'BRG-CD74',desc:'Precision bearing for CD74 press',stock:7,minStock:5,priceKsh:9310,supplier:'Bearings Inc',location:'Warehouse I1'},
+{id:41,category:'C',partNum:'GR-CD74',desc:'Main drive gear for CD74',stock:8,minStock:5,priceKsh:30450,supplier:'GearMaster',location:'Warehouse I2'},
+{id:42,category:'C',partNum:'RB-SUCK-08',desc:'Rubber sucker 30x13x0.8mm (pack 50)',stock:0,minStock:10,priceKsh:100,supplier:'SuckerPro',location:'Warehouse H2'},
+{id:43,category:'C',partNum:'RB-SUCK-10',desc:'Rubber sucker 30x13x1.0mm (pack 50)',stock:0,minStock:10,priceKsh:100,supplier:'SuckerPro',location:'Warehouse H2'},
+{id:44,category:'C',partNum:'DIA-CLIP',desc:'Diaphragm clips for dampening (set of 12)',stock:0,minStock:5,priceKsh:13500,supplier:'DiaphramCo',location:'Warehouse J1'},
+// CATEGORY D - Cam Followers (4)
+{id:45,category:'D',partNum:'F-229817',desc:'Cam follower for CD74/CD102',stock:24,minStock:10,priceKsh:14750,supplier:'CamTech',location:'Warehouse K1'},
+{id:46,category:'D',partNum:'00.550.1471',desc:'Cam follower for SM74 delivery',stock:13,minStock:5,priceKsh:11250,supplier:'CamTech',location:'Warehouse K1'},
+{id:47,category:'D',partNum:'00.550.1505',desc:'Cam follower for SM52',stock:22,minStock:10,priceKsh:6000,supplier:'CamTech',location:'Warehouse K2'},
+{id:48,category:'D',partNum:'00.550.0478',desc:'Cam follower for SM74 delivery heavy-duty',stock:1,minStock:1,priceKsh:11250,supplier:'CamTech',location:'Warehouse K2'},
+// CATEGORY E - Tapes & Nozzles (34)
+{id:49,category:'E',partNum:'M2.015.848f',desc:'Suction tapes for sheet transport (set of 4)',stock:49,minStock:20,priceKsh:4800,supplier:'TapeMaster',location:'Warehouse L1'},
+{id:50,category:'E',partNum:'F2.028.267',desc:'Lifting sucker nozzles with spring (10 pack)',stock:7,minStock:5,priceKsh:8880,supplier:'NozzlePro',location:'Warehouse L2'},
+{id:51,category:'E',partNum:'G2.028.010/04',desc:'SM52 lifting sucker nozzles (6 pack)',stock:0,minStock:5,priceKsh:1750,supplier:'NozzlePro',location:'Warehouse L2'},
+{id:52,category:'E',partNum:'VRT-PERF',desc:'Vertical perforating blade assembly',stock:0,minStock:1,priceKsh:12800,supplier:'BladeCo',location:'Warehouse M1'},
+{id:53,category:'E',partNum:'BLK-HK',desc:'Standard blanket hooks (10 pack)',stock:10,minStock:5,priceKsh:3150,supplier:'HookMaster',location:'Warehouse M2'},
+{id:54,category:'E',partNum:'BLK-HK-GTO',desc:'Blanket hooks for GTO (8 pack)',stock:0,minStock:5,priceKsh:3150,supplier:'HookMaster',location:'Warehouse M2'},
+{id:55,category:'E',partNum:'BLK-HK-SM',desc:'Blanket hooks for SM74/SM102 (10 pack)',stock:0,minStock:5,priceKsh:3150,supplier:'HookMaster',location:'Warehouse M2'},
+{id:56,category:'E',partNum:'BLK-HK-CD',desc:'Blanket hooks for CD74/CD102 (10 pack)',stock:0,minStock:5,priceKsh:3150,supplier:'HookMaster',location:'Warehouse M2'},
+{id:57,category:'E',partNum:'CYL-HD',desc:'Cylinder head universal fit',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N1'},
+{id:58,category:'E',partNum:'CYL-HD-CD74',desc:'Cylinder head for CD74 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N1'},
+{id:59,category:'E',partNum:'CYL-HD-CD102',desc:'Cylinder head for CD102 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N1'},
+{id:60,category:'E',partNum:'CYL-HD-SM74',desc:'Cylinder head for SM74 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N2'},
+{id:61,category:'E',partNum:'CYL-HD-SM102',desc:'Cylinder head for SM102 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N2'},
+{id:62,category:'E',partNum:'CYL-HD-SM52',desc:'Cylinder head for SM52 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N2'},
+{id:63,category:'E',partNum:'CYL-HD-PM74',desc:'Cylinder head for PM74 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N3'},
+{id:64,category:'E',partNum:'CYL-HD-GTO',desc:'Cylinder head for GTO press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N3'},
+{id:65,category:'E',partNum:'CYL-HD-XL105',desc:'Cylinder head for XL105 press',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N3'},
+{id:66,category:'E',partNum:'CYL-HD-SPD',desc:'Cylinder head for Speedmaster',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N4'},
+{id:67,category:'E',partNum:'CYL-HD-DOM',desc:'Cylinder head for Dominant',stock:0,minStock:1,priceKsh:10500,supplier:'Heidelberg',location:'Warehouse N4'},
+{id:68,category:'E',partNum:'CYL-HD-RAP',desc:'Cylinder head for Rapida',stock:0,minStock:1,priceKsh:10500,supplier:'KBA',location:'Warehouse N4'},
+{id:69,category:'E',partNum:'CYL-HD-RYO',desc:'Cylinder head for Ryobi',stock:0,minStock:1,priceKsh:10500,supplier:'Ryobi',location:'Warehouse N5'},
+{id:70,category:'E',partNum:'CYL-HD-KOM',desc:'Cylinder head for Komori',stock:0,minStock:1,priceKsh:10500,supplier:'Komori',location:'Warehouse N5'},
+{id:71,category:'E',partNum:'CYL-HD-MIT',desc:'Cylinder head for Mitsubishi',stock:0,minStock:1,priceKsh:10500,supplier:'Mitsubishi',location:'Warehouse N5'},
+{id:72,category:'E',partNum:'CYL-HD-SHIN',desc:'Cylinder head for Shinohara',stock:0,minStock:1,priceKsh:10500,supplier:'Shinohara',location:'Warehouse N6'},
+{id:73,category:'E',partNum:'CYL-HD-SAK',desc:'Cylinder head for Sakurai',stock:0,minStock:1,priceKsh:10500,supplier:'Sakurai',location:'Warehouse N6'},
+{id:74,category:'E',partNum:'CYL-HD-ROL',desc:'Cylinder head for Roland',stock:0,minStock:1,priceKsh:10500,supplier:'Manroland',location:'Warehouse N7'},
+{id:75,category:'E',partNum:'CYL-HD-KBA',desc:'Cylinder head for KBA',stock:0,minStock:1,priceKsh:10500,supplier:'KBA',location:'Warehouse N7'},
+{id:76,category:'E',partNum:'CYL-HD-MAN',desc:'Cylinder head for Manroland',stock:0,minStock:1,priceKsh:10500,supplier:'Manroland',location:'Warehouse N8'},
+{id:77,category:'E',partNum:'CYL-HD-OMC',desc:'Cylinder head for OMCSA',stock:0,minStock:1,priceKsh:10500,supplier:'OMCSA',location:'Warehouse N8'},
+{id:78,category:'E',partNum:'CYL-HD-SOL',desc:'Cylinder head for Solna',stock:0,minStock:1,priceKsh:10500,supplier:'Solna',location:'Warehouse N8'},
+{id:79,category:'E',partNum:'CYL-HD-MIL',desc:'Cylinder head for Miller',stock:0,minStock:1,priceKsh:10500,supplier:'Miller',location:'Warehouse N9'},
+{id:80,category:'E',partNum:'CYL-HD-ATF',desc:'Cylinder head for ATF',stock:0,minStock:1,priceKsh:10500,supplier:'ATF',location:'Warehouse N9'},
+{id:81,category:'E',partNum:'CYL-HD-SHN',desc:'Cylinder head for Shinko',stock:2,minStock:1,priceKsh:10500,supplier:'Shinko',location:'Warehouse N9'},
+{id:82,category:'E',partNum:'NOZ-AIR-01',desc:'Air nozzle for sheet separator',stock:15,minStock:8,priceKsh:2200,supplier:'NozzlePro',location:'Warehouse L3'},
+// CATEGORY F - Rollers & Motors (34)
+{id:83,category:'F',partNum:'INK-ROL',desc:'Ink roller polyurethane 70 Shore A',stock:15,minStock:10,priceKsh:7500,supplier:'RollerTech',location:'Warehouse O1'},
+{id:84,category:'F',partNum:'DMP-ROL',desc:'Dampening roller ceramic coated',stock:12,minStock:8,priceKsh:8200,supplier:'RollerTech',location:'Warehouse O1'},
+{id:85,category:'F',partNum:'OSC-ROL',desc:'Oscillator roller assembly',stock:8,minStock:5,priceKsh:9500,supplier:'RollerTech',location:'Warehouse O2'},
+{id:86,category:'F',partNum:'VIB-ROL',desc:'Vibrator roller with eccentric drive',stock:6,minStock:4,priceKsh:8800,supplier:'RollerTech',location:'Warehouse O2'},
+{id:87,category:'F',partNum:'FRM-ROL',desc:'Form roller for ink train',stock:20,minStock:12,priceKsh:7200,supplier:'RollerTech',location:'Warehouse O3'},
+{id:88,category:'F',partNum:'PLT-GEAR',desc:'Plate cylinder drive gear',stock:4,minStock:2,priceKsh:12500,supplier:'GearMaster',location:'Warehouse P1'},
+{id:89,category:'F',partNum:'BLK-GEAR',desc:'Blanket cylinder gear',stock:3,minStock:2,priceKsh:13500,supplier:'GearMaster',location:'Warehouse P1'},
+{id:90,category:'F',partNum:'IMP-GEAR',desc:'Impression cylinder gear',stock:2,minStock:2,priceKsh:14500,supplier:'GearMaster',location:'Warehouse P2'},
+{id:91,category:'F',partNum:'INK-PMP',desc:'Ink pump gear type 12cc/rev',stock:5,minStock:3,priceKsh:18500,supplier:'PumpPro',location:'Warehouse Q1'},
+{id:92,category:'F',partNum:'DMP-PMP',desc:'Dampening pump diaphragm 8 l/min',stock:4,minStock:3,priceKsh:17500,supplier:'PumpPro',location:'Warehouse Q1'},
+{id:93,category:'F',partNum:'INK-KNF',desc:'Ink knife assembly for duct roller',stock:7,minStock:5,priceKsh:4500,supplier:'BladeCo',location:'Warehouse Q2'},
+{id:94,category:'F',partNum:'DMP-KNF',desc:'Dampening knife assembly',stock:6,minStock:4,priceKsh:4200,supplier:'BladeCo',location:'Warehouse Q2'},
+{id:95,category:'F',partNum:'INK-DCT',desc:'Ink duct roller chrome surface',stock:3,minStock:2,priceKsh:12500,supplier:'RollerTech',location:'Warehouse O3'},
+{id:96,category:'F',partNum:'DMP-DCT',desc:'Dampening duct roller ceramic',stock:2,minStock:2,priceKsh:11500,supplier:'RollerTech',location:'Warehouse O3'},
+{id:97,category:'F',partNum:'INK-AGT',desc:'Ink agitator with motor',stock:4,minStock:3,priceKsh:15500,supplier:'AgitatorCo',location:'Warehouse R1'},
+{id:98,category:'F',partNum:'DMP-AGT',desc:'Dampening agitator magnetic drive',stock:3,minStock:2,priceKsh:14500,supplier:'AgitatorCo',location:'Warehouse R1'},
+{id:99,category:'F',partNum:'INK-LVL',desc:'Ink level sensor ultrasonic',stock:5,minStock:4,priceKsh:8500,supplier:'SensorTech',location:'Warehouse S1'},
+{id:100,category:'F',partNum:'DMP-LVL',desc:'Dampening level sensor float type',stock:4,minStock:3,priceKsh:8200,supplier:'SensorTech',location:'Warehouse S1'},
+{id:101,category:'F',partNum:'INK-FLT',desc:'Ink filter assembly 50 micron',stock:10,minStock:8,priceKsh:2500,supplier:'FilterPro',location:'Warehouse S2'},
+{id:102,category:'F',partNum:'DMP-FLT',desc:'Dampening solution filter 100 micron',stock:9,minStock:7,priceKsh:2300,supplier:'FilterPro',location:'Warehouse S2'},
+{id:103,category:'F',partNum:'INK-HOS',desc:'Ink hose assembly 1m braided',stock:15,minStock:10,priceKsh:3500,supplier:'HoseMaster',location:'Warehouse T1'},
+{id:104,category:'F',partNum:'DMP-HOS',desc:'Dampening hose assembly 1m PVC',stock:14,minStock:9,priceKsh:3200,supplier:'HoseMaster',location:'Warehouse T1'},
+{id:105,category:'F',partNum:'INK-NOZ',desc:'Ink nozzle for duct stainless',stock:20,minStock:15,priceKsh:1500,supplier:'NozzlePro',location:'Warehouse T2'},
+{id:106,category:'F',partNum:'DMP-NOZ',desc:'Dampening nozzle for spray bar',stock:18,minStock:12,priceKsh:1400,supplier:'NozzlePro',location:'Warehouse T2'},
+{id:107,category:'F',partNum:'INK-VLV',desc:'Ink flow control valve needle type',stock:8,minStock:6,priceKsh:5500,supplier:'ValveCo',location:'Warehouse U1'},
+{id:108,category:'F',partNum:'DMP-VLV',desc:'Dampening solenoid valve 2-way',stock:7,minStock:5,priceKsh:5200,supplier:'ValveCo',location:'Warehouse U1'},
+{id:109,category:'F',partNum:'INK-HTR',desc:'Ink heater 500W thermostatic',stock:3,minStock:2,priceKsh:18500,supplier:'HeaterCo',location:'Warehouse V1'},
+{id:110,category:'F',partNum:'DMP-HTR',desc:'Dampening solution heater 300W',stock:2,minStock:2,priceKsh:17500,supplier:'HeaterCo',location:'Warehouse V1'},
+{id:111,category:'F',partNum:'INK-CLR',desc:'Ink cooler water-cooled heat exchanger',stock:2,minStock:2,priceKsh:19500,supplier:'CoolerCo',location:'Warehouse V2'},
+{id:112,category:'F',partNum:'DMP-CLR',desc:'Dampening solution chiller',stock:1,minStock:1,priceKsh:18500,supplier:'CoolerCo',location:'Warehouse V2'},
+{id:113,category:'F',partNum:'INK-SNS',desc:'Ink temperature sensor PT100',stock:6,minStock:4,priceKsh:9500,supplier:'SensorTech',location:'Warehouse S3'},
+{id:114,category:'F',partNum:'DMP-SNS',desc:'Dampening conductivity sensor',stock:5,minStock:3,priceKsh:9200,supplier:'SensorTech',location:'Warehouse S3'},
+{id:115,category:'F',partNum:'INK-MTR',desc:'Ink pump motor 0.5HP 3-phase',stock:4,minStock:3,priceKsh:22500,supplier:'MotorPro',location:'Warehouse W1'},
+{id:116,category:'F',partNum:'DMP-MTR',desc:'Dampening pump motor 0.25HP',stock:3,minStock:2,priceKsh:21500,supplier:'MotorPro',location:'Warehouse W1'},
+// CATEGORY G - Accessories & Consumables (12)
+{id:117,category:'G',partNum:'ACC-BLADE-01',desc:'Replacement cutting blades for paper trimming, set of 5, high carbon steel',stock:25,minStock:10,priceKsh:2500,supplier:'BladeMaster',location:'Warehouse X1'},
+{id:118,category:'G',partNum:'ACC-LUBE-01',desc:'Industrial lubricant oil for press gears, 5 liter, high temperature resistant',stock:15,minStock:5,priceKsh:3200,supplier:'LubriTech',location:'Warehouse X2'},
+{id:119,category:'G',partNum:'ACC-CLN-01',desc:'Cleaning solution for ink rollers, 1 liter, eco-friendly formula',stock:30,minStock:10,priceKsh:1800,supplier:'CleanPro',location:'Warehouse X1'},
+{id:120,category:'G',partNum:'ACC-TOOL-01',desc:'Maintenance tool kit for press technicians, wrenches, screwdrivers, alignment tools',stock:8,minStock:3,priceKsh:12000,supplier:'ToolMaster',location:'Warehouse X3'},
+{id:121,category:'G',partNum:'ACC-SAFE-01',desc:'Safety gloves for press operators, heat resistant, pack of 10 pairs',stock:50,minStock:15,priceKsh:850,supplier:'SafetyFirst',location:'Warehouse X2'},
+{id:122,category:'G',partNum:'ACC-CABLE-01',desc:'Connection cables for press control systems, 2m length, set of 5',stock:20,minStock:8,priceKsh:3500,supplier:'CablePro',location:'Warehouse X1'},
+{id:123,category:'G',partNum:'ACC-SPR-01',desc:'Assorted springs kit, 50 pieces, various sizes, general press maintenance',stock:12,minStock:5,priceKsh:4000,supplier:'SpringCo',location:'Warehouse F1'},
+{id:124,category:'G',partNum:'ACC-SEAL-01',desc:'Rubber seals and O-rings kit, 100 pieces, various sizes',stock:18,minStock:8,priceKsh:2800,supplier:'SealMaster',location:'Warehouse X2'},
+{id:125,category:'G',partNum:'ACC-BELT-01',desc:'Drive belt for feeder motor, V-type, various press models',stock:9,minStock:4,priceKsh:5500,supplier:'BeltPro',location:'Warehouse X3'},
+{id:126,category:'G',partNum:'ACC-FUSE-01',desc:'Electrical fuses kit for press control panels, assorted ratings',stock:40,minStock:20,priceKsh:600,supplier:'ElecParts',location:'Warehouse X1'},
+{id:127,category:'G',partNum:'ACC-INK-CLN',desc:'Blanket and roller wash, 5 liter container',stock:22,minStock:10,priceKsh:4200,supplier:'CleanPro',location:'Warehouse X2'},
+{id:128,category:'G',partNum:'ACC-BRUSH-01',desc:'Cleaning brushes set for press maintenance, 6 piece assorted',stock:35,minStock:12,priceKsh:1200,supplier:'ToolMaster',location:'Warehouse X3'},
 ];
-
-// ============ APP STATE ============
-let parts = [], invoices = [], settings = {}, activityLog = [];
-let lineItems = [], invoiceCounter = 1;
-let catChart, trendChart;
-let currentTheme = 'dark';
-let currentUser = null;
 
 // ============ CATEGORY IMAGES ============
 const CAT_COLORS = {A:'#ff6b6b',B:'#ffa94d',C:'#69db7c',D:'#74c0fc',E:'#da77f2',F:'#f783ac',G:'#63e6be'};
-function getCatImage(cat, partId) {
-    const c = CAT_COLORS[cat] || '#888';
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='${c.replace('#','%23')}' opacity='0.2'/%3E%3Ctext x='12' y='16' text-anchor='middle' fill='${c.replace('#','%23')}' font-size='12'%3E${cat}%3C/text%3E%3C/svg%3E`;
-}
+function getCatImage(cat, partId) { return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='${CAT_COLORS[cat]?.replace('#','%23') || '%23888'}' opacity='0.2'/%3E%3Ctext x='12' y='16' text-anchor='middle' fill='${CAT_COLORS[cat]?.replace('#','%23') || '%23888'}' font-size='12'%3E${cat}%3C/text%3E%3C/svg%3E`; }
+
+// ============ APP STATE ============
+let parts = [], invoices = [], lineItems = [], invoiceCounter = 1;
+let catChart, trendChart;
+let currentTheme = localStorage.getItem('theme') || 'dark';
 
 // ============ AUTH FUNCTIONS ============
 function switchTab(tab) {
@@ -545,8 +605,8 @@ function switchTab(tab) {
     if (sb) { sb.style.background = isLogin ? 'transparent' : 'var(--accent)'; sb.style.color = isLogin ? 'var(--muted)' : '#fff'; }
 }
 
-function showAuthError(msg) { const el = document.getElementById('authError'); if (el) { el.innerHTML = '⚠️ ' + msg; el.style.display = 'block'; } }
-function showAuthSuccess(msg) { const el = document.getElementById('authSuccess'); if (el) { el.innerHTML = '✅ ' + msg; el.style.display = 'block'; } }
+function showAuthError(msg) { const el = document.getElementById('authError'); if (el) { el.innerHTML = msg; el.style.display = 'block'; } }
+function showAuthSuccess(msg) { const el = document.getElementById('authSuccess'); if (el) { el.innerHTML = msg; el.style.display = 'block'; } }
 
 async function doLogin() {
     const email = document.getElementById('loginEmail')?.value.trim();
@@ -557,11 +617,11 @@ async function doLogin() {
         if (result.success) {
             authToken = result.token;
             localStorage.setItem('token', authToken);
-            currentUser = { id: result.user.id, name: result.user.fullName || result.user.email, email: result.user.email };
+            currentUser = result.user;
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
-            document.getElementById('sidebarName').innerText = currentUser.name;
-            document.getElementById('sidebarAvatar').innerText = (currentUser.name?.[0] || 'U').toUpperCase();
+            document.getElementById('sidebarName').innerText = currentUser.full_name || currentUser.email;
+            document.getElementById('sidebarAvatar').innerText = (currentUser.full_name?.[0] || currentUser.email?.[0] || 'U').toUpperCase();
             await loadUserData();
         } else showAuthError('Invalid credentials');
     } catch(e) { showAuthError(e.message); }
@@ -578,11 +638,11 @@ async function doSignup() {
         if (result.success) {
             authToken = result.token;
             localStorage.setItem('token', authToken);
-            currentUser = { id: result.user.id, name: result.user.fullName || result.user.email, email: result.user.email };
+            currentUser = result.user;
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
-            document.getElementById('sidebarName').innerText = currentUser.name;
-            document.getElementById('sidebarAvatar').innerText = (currentUser.name?.[0] || 'U').toUpperCase();
+            document.getElementById('sidebarName').innerText = currentUser.full_name || currentUser.email;
+            document.getElementById('sidebarAvatar').innerText = (currentUser.full_name?.[0] || currentUser.email?.[0] || 'U').toUpperCase();
             await loadUserData();
         } else showAuthError('Signup failed');
     } catch(e) { showAuthError(e.message); }
@@ -617,20 +677,28 @@ async function checkLogin() {
 }
 
 async function loadUserData() {
-    parts = await apiCall('/api/parts');
-    invoices = await apiCall('/api/invoices');
+    try {
+        parts = await apiCall('/api/parts');
+    } catch(e) { parts = []; }
+    try {
+        invoices = await apiCall('/api/invoices');
+    } catch(e) { invoices = []; }
     if (parts.length === 0) {
         for (const p of DEFAULT_PARTS) {
-            await apiCall('/api/parts', 'POST', {
-                partNum: p.partNum, desc: p.desc, category: p.category,
-                stock: p.stock, minStock: p.minStock, priceKsh: p.priceKsh,
-                supplier: p.supplier || '', location: p.location || '', image: null
-            });
+            try {
+                await apiCall('/api/parts', 'POST', {
+                    partNum: p.partNum, desc: p.desc, category: p.category,
+                    stock: p.stock, minStock: p.minStock, priceKsh: p.priceKsh,
+                    supplier: p.supplier || '', location: p.location || '', image: null
+                });
+            } catch(e) { console.log('Seed error:', e); }
         }
-        parts = await apiCall('/api/parts');
+        try {
+            parts = await apiCall('/api/parts');
+        } catch(e) { parts = []; }
     }
-    renderDashboard();
     renderInventory();
+    renderDashboard();
     renderInvoiceList();
     initCreateInvoice();
 }
@@ -671,25 +739,7 @@ function filterInventory() {
     if (status === 'out') filtered = filtered.filter(p => p.stock === 0);
     else if (status === 'low') filtered = filtered.filter(p => p.stock > 0 && p.stock <= p.minStock);
     else if (status === 'ok') filtered = filtered.filter(p => p.stock > p.minStock);
-    const body = document.getElementById('invBody');
-    body.innerHTML = filtered.map(p => {
-        const img = p.image || getCatImage(p.category, p.id);
-        const statusClass = p.stock === 0 ? 'badge-danger' : (p.stock <= p.minStock ? 'badge-warn' : 'badge-success');
-        const statusText = p.stock === 0 ? 'Out of Stock' : (p.stock <= p.minStock ? 'Low Stock' : 'In Stock');
-        return `<tr>
-            <td><img src="${img}" class="part-thumb" onerror="this.src='${getCatImage(p.category,p.id)}'"/></td>
-            <td><div class="part-num">${escapeHtml(p.partNum)}</div></td>
-            <td><div class="part-desc">${escapeHtml(p.desc)}</div></td>
-            <td><span class="badge badge-cat-${p.category}">${p.category}</span></td>
-            <td><div class="stock-ctrl"><button class="stock-btn" onclick="adjustStock(${p.id},-1)">−</button><span class="stock-num">${p.stock}</span><button class="stock-btn" onclick="adjustStock(${p.id},1)">+</button></div></td>
-            <td>${p.minStock}</td>
-            <td><span class="price-ksh">KSH ${(p.priceKsh || 0).toLocaleString()}</span></td>
-            <td>${escapeHtml(p.supplier || '')}</td>
-            <td>${escapeHtml(p.location || '')}</td>
-            <td><span class="badge ${statusClass}">${statusText}</span></td>
-            <td><button class="btn btn-outline btn-xs" onclick="openEditPart(${p.id})"><i class="fa fa-edit"></i></button> <button class="btn btn-danger btn-xs" onclick="deletePart(${p.id})"><i class="fa fa-trash"></i></button></td>
-        </tr>`;
-    }).join('');
+    renderInventory();
 }
 
 async function adjustStock(id, delta) {
@@ -785,6 +835,7 @@ function renderDashboard() {
     catChart = new Chart(ctx, { type: 'bar', data: { labels: ['Valves', 'Bellows', 'Gears', 'Cams', 'Tapes', 'Rollers', 'Accessories'], datasets: [{ data: catStock, backgroundColor: '#00d4ff88', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
     const lowParts = parts.filter(p => p.stock <= p.minStock).slice(0, 6);
     document.getElementById('lowStockList').innerHTML = lowParts.length ? lowParts.map(p => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px">${escapeHtml(p.partNum)}</div><div style="font-size:11px;color:var(--muted)">${escapeHtml(p.desc.slice(0, 50))}…</div><span class="badge ${p.stock === 0 ? 'badge-danger' : 'badge-warn'}">${p.stock}</span></div>`).join('') : '<div style="padding:16px;text-align:center">All stock levels healthy ✓</div>';
+    document.getElementById('activityFeed').innerHTML = '<div style="padding:16px;text-align:center">Activity log will appear here</div>';
 }
 
 // ============ INVOICES ============
@@ -820,20 +871,15 @@ function addLineItem(partId) {
 }
 
 function removeLineItem(idx) { lineItems.splice(idx, 1); renderLineItems(); calcTotals(); }
+function updateLineItem(idx, field, val) { lineItems[idx][field] = field === 'qty' ? parseInt(val) || 1 : parseFloat(val) || 0; renderLineItems(); calcTotals(); }
 
 function renderLineItems() {
     const body = document.getElementById('lineItemBody');
     if (!lineItems.length) { body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px">No items added</td></tr>'; return; }
     body.innerHTML = lineItems.map((item, i) => {
         const total = item.qty * item.unitPrice;
-        return `<tr><td><div style="font-weight:500">${escapeHtml(item.partNum)}</div><div style="font-size:11px">${escapeHtml(item.desc.slice(0, 50))}</div></td><td><input type="number" min="1" value="${item.qty}" style="width:60px" onchange="updateLineItem(${i},\'qty\',this.value)"/></td><td><input type="number" min="0" value="${item.unitPrice}" style="width:90px" onchange="updateLineItem(${i},\'unitPrice\',this.value)"/></td><td class="price-ksh">KSH ${total.toLocaleString()}</td><td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td></tr>`;
+        return `<tr><td><div style="font-weight:500">${escapeHtml(item.partNum)}</div><div style="font-size:11px">${escapeHtml(item.desc.slice(0, 50))}</div></td><td><input type="number" min="1" value="${item.qty}" style="width:60px" onchange="updateLineItem(${i},'qty',this.value)"/></td><td><input type="number" min="0" value="${item.unitPrice}" style="width:90px" onchange="updateLineItem(${i},'unitPrice',this.value)"/></td><td class="price-ksh">KSH ${total.toLocaleString()}</td><td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td></tr>`;
     }).join('');
-}
-
-function updateLineItem(idx, field, val) {
-    lineItems[idx][field] = field === 'qty' ? parseInt(val) || 1 : parseFloat(val) || 0;
-    renderLineItems();
-    calcTotals();
 }
 
 function calcTotals() {
@@ -898,18 +944,20 @@ async function saveInvoice(type) {
 
 function renderInvoiceList() {
     const body = document.getElementById('invoiceListBody');
+    if (!invoices.length) { body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">No invoices yet</td></tr>'; return; }
     body.innerHTML = invoices.slice().reverse().map(inv => `
         <tr><td><b>${escapeHtml(inv.invoiceNumber)}</b></td><td>${inv.date}</td><td>${escapeHtml(inv.customer)}</td><td>${inv.items.length}</td><td class="price-ksh">KSH ${Math.round(inv.subtotal).toLocaleString()}</td><td class="price-ksh">KSH ${Math.round(inv.vat).toLocaleString()}</td><td class="price-ksh"><b>KSH ${Math.round(inv.grand).toLocaleString()}</b></td><td><span class="badge ${inv.type === 'invoice' ? 'badge-success' : 'badge-warn'}">${inv.type}</span></td><td><button class="btn btn-outline btn-xs" onclick="viewInvoice(${inv.id})">View</button> <button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})">Del</button></td></tr>
-    `).join('') || '<tr><td colspan="9" style="text-align:center;padding:24px">No invoices yet</td></tr>';
+    `).join('');
 }
 
 function filterInvoiceList() {
     const q = document.getElementById('invListSearch').value.toLowerCase();
     const filtered = q ? invoices.filter(i => i.invoiceNumber.toLowerCase().includes(q) || i.customer.toLowerCase().includes(q)) : invoices;
     const body = document.getElementById('invoiceListBody');
+    if (!filtered.length) { body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">No matching invoices</td></tr>'; return; }
     body.innerHTML = filtered.slice().reverse().map(inv => `
         <tr><td><b>${escapeHtml(inv.invoiceNumber)}</b></td><td>${inv.date}</td><td>${escapeHtml(inv.customer)}</td><td>${inv.items.length}</td><td class="price-ksh">KSH ${Math.round(inv.subtotal).toLocaleString()}</td><td class="price-ksh">KSH ${Math.round(inv.vat).toLocaleString()}</td><td class="price-ksh"><b>KSH ${Math.round(inv.grand).toLocaleString()}</b></td><td><span class="badge ${inv.type === 'invoice' ? 'badge-success' : 'badge-warn'}">${inv.type}</span></td><td><button class="btn btn-outline btn-xs" onclick="viewInvoice(${inv.id})">View</button> <button class="btn btn-danger btn-xs" onclick="deleteInvoice(${inv.id})">Del</button></td></tr>
-    `).join('') || '<tr><td colspan="9" style="text-align:center;padding:24px">No matching invoices</td></tr>';
+    `).join('');
 }
 
 async function deleteInvoice(id) {
@@ -954,14 +1002,32 @@ async function undoLastInvoice() {
 function renderReports() {
     const out = parts.filter(p => p.stock === 0);
     const low = parts.filter(p => p.stock > 0 && p.stock <= p.minStock);
-    document.getElementById('outStockBody').innerHTML = out.map(p => `<tr><td class="part-num">${escapeHtml(p.partNum)}</td><td>${escapeHtml(p.desc.slice(0, 60))}</td><td>${p.minStock}</td><td>${escapeHtml(p.supplier || '')}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">None</td></tr>';
-    document.getElementById('lowStockBody').innerHTML = low.map(p => `<tr><td class="part-num">${escapeHtml(p.partNum)}</td><td>${escapeHtml(p.desc.slice(0, 55))}</td><td class="stock-low">${p.stock}</td><td>${p.minStock}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">None</td></tr>';
+    document.getElementById('outStockBody').innerHTML = out.map(p => `<tr><td class="part-num">${escapeHtml(p.partNum)}</td><td class="part-desc">${escapeHtml(p.desc.slice(0, 60))}</td><td>${p.minStock}</td><td>${escapeHtml(p.supplier || '')}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">None</td></tr>';
+    document.getElementById('lowStockBody').innerHTML = low.map(p => `<tr><td class="part-num">${escapeHtml(p.partNum)}</td><td class="part-desc">${escapeHtml(p.desc.slice(0, 55))}</td><td class="stock-low">${p.stock}</td><td>${p.minStock}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">None</td></tr>';
+    document.getElementById('salesSummary').innerHTML = `
+        <div class="report-stat"><div class="report-stat-num">${invoices.filter(i=>i.type==='invoice').length}</div><div class="report-stat-label">Invoices</div></div>
+        <div class="report-stat"><div class="report-stat-num">${invoices.filter(i=>i.type==='quotation').length}</div><div class="report-stat-label">Quotations</div></div>
+        <div class="report-stat"><div class="report-stat-num">KSH ${Math.round(invoices.filter(i=>i.type==='invoice').reduce((s,i)=>s+i.grand,0)).toLocaleString()}</div><div class="report-stat-label">Revenue</div></div>
+    `;
+}
+
+function exportCSV() {
+    let csv = 'SKU,Description,Category,Stock,Min Stock,Price,Supplier,Location\n';
+    parts.forEach(p => { csv += `"${p.partNum}","${p.desc}","${p.category}",${p.stock},${p.minStock},${p.priceKsh},"${p.supplier || ''}","${p.location || ''}"\n`; });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'inventory.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function exportReportCSV(type) {
+    let data = type === 'out' ? parts.filter(p => p.stock === 0) : parts.filter(p => p.stock > 0 && p.stock <= p.minStock);
+    let csv = 'SKU,Description,Stock,Min Stock,Price\n';
+    data.forEach(p => { csv += `"${p.partNum}","${p.desc}",${p.stock},${p.minStock},${p.priceKsh}\n`; });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${type}_stock.csv`; a.click(); URL.revokeObjectURL(a.href);
 }
 
 // ============ SETTINGS ============
-function applySettings() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    currentTheme = savedTheme;
+function applyTheme() {
     document.documentElement.setAttribute('data-theme', currentTheme);
     const dt = document.getElementById('darkToggle');
     if (dt) dt.classList.toggle('on', currentTheme === 'dark');
@@ -969,32 +1035,31 @@ function applySettings() {
 function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', currentTheme);
-    if (document.getElementById('darkToggle')) document.getElementById('darkToggle').classList.toggle('on', currentTheme === 'dark');
+    const dt = document.getElementById('darkToggle');
+    if (dt) dt.classList.toggle('on', currentTheme === 'dark');
     localStorage.setItem('theme', currentTheme);
 }
-function exportCSV() {
-    let csv = 'SKU,Description,Category,Stock,Min Stock,Price,Supplier,Location\n';
-    parts.forEach(p => { csv += `"${p.partNum}","${p.desc}","${p.category}",${p.stock},${p.minStock},${p.priceKsh},"${p.supplier || ''}","${p.location || ''}"\n`; });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'inventory.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
+function exportBackup() {
+    const backup = { exportDate: new Date().toISOString(), parts, invoices };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'printex_backup.json'; a.click(); URL.revokeObjectURL(a.href);
+    showToast('Backup exported');
+}
+function resetToDefault() {
+    if (confirm('Reset to default parts?')) location.reload();
+}
+function clearAllData() {
+    if (confirm('Delete all data?')) {
+        localStorage.clear();
+        location.reload();
+    }
 }
 
 // ============ HELPERS ============
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }); });
-function showToast(msg, type = 'success') {
-    const zone = document.getElementById('toastZone');
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = msg;
-    zone.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-}
+function showToast(msg, type = 'success') { const zone = document.getElementById('toastZone'); const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = msg; zone.appendChild(t); setTimeout(() => t.remove(), 3500); }
 function escapeHtml(s) { if (!s) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 function showPage(id, navEl) {
@@ -1010,6 +1075,7 @@ function toggleSidebar() { document.getElementById('sidebar').classList.toggle('
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').style.display = 'none'; }
 
 // ============ BOOT ============
+applyTheme();
 checkLogin();
 </script>
 </body>
