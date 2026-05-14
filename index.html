@@ -936,7 +936,7 @@ async function deletePart(id) {
 
 // ============ DASHBOARD ============
 function renderDashboard() {
-    // Calculate total stock value correctly
+    // --- KPIs ---
     const totalValue = parts.reduce((sum, p) => {
         const price = p.price_ksh || p.priceKsh || 0;
         const stock = p.stock || 0;
@@ -945,18 +945,18 @@ function renderDashboard() {
     
     const lowCount = parts.filter(p => {
         const stock = p.stock || 0;
-        const minStock = p.min_stock || p.minStock || 1;
-        return stock > 0 && stock <= minStock;
+        const min = p.min_stock || p.minStock || 1;
+        return stock > 0 && stock <= min;
     }).length;
     
     const outCount = parts.filter(p => (p.stock || 0) === 0).length;
+    const inStockCount = parts.filter(p => (p.stock || 0) > 0).length;
     
-    // Update KPI cards
     document.getElementById('kpiGrid').innerHTML = `
         <div class="kpi-card" style="--kpi-color:var(--accent)">
             <div class="kpi-label">Total Parts</div>
             <div class="kpi-value">${parts.length}</div>
-            <div class="kpi-sub">${parts.filter(p => (p.stock || 0) > 0).length} in stock</div>
+            <div class="kpi-sub">${inStockCount} in stock</div>
         </div>
         <div class="kpi-card" style="--kpi-color:var(--gold)">
             <div class="kpi-label">Stock Value</div>
@@ -974,6 +974,118 @@ function renderDashboard() {
             <div class="kpi-sub">Immediate action needed</div>
         </div>
     `;
+    
+    // --- Stock by Category chart ---
+    const categories = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const catLabels = ['Valves', 'Bellows', 'Gears', 'Cams', 'Tapes', 'Rollers', 'Accessories'];
+    const catStock = categories.map(cat =>
+        parts.filter(p => p.category === cat).reduce((s, p) => s + (p.stock || 0), 0)
+    );
+    
+    const ctx = document.getElementById('catChart').getContext('2d');
+    if (window.catChart) window.catChart.destroy();
+    window.catChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catStock,
+                backgroundColor: '#00d4ff88',
+                borderColor: '#00d4ff',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: 'var(--muted)' } },
+                x: { ticks: { color: 'var(--muted)' } }
+            }
+        }
+    });
+    
+    // --- Value Trend chart (last 6 months, based on stock value) ---
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    if (window.trendChart) window.trendChart.destroy();
+    if (trendCtx) {
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            months.push(d.toLocaleDateString('en-KE', { month: 'short', year: 'numeric' }));
+        }
+        // Build trend from current total value (you can later replace with real invoice data)
+        const trendData = [
+            totalValue * 0.82,
+            totalValue * 0.87,
+            totalValue * 0.91,
+            totalValue * 0.95,
+            totalValue * 0.98,
+            totalValue
+        ];
+        window.trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    data: trendData,
+                    borderColor: 'var(--accent)',
+                    backgroundColor: 'rgba(0,212,255,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: 'var(--accent)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        ticks: {
+                            color: 'var(--muted)',
+                            callback: v => `KSH ${(v/1000).toFixed(0)}K`
+                        }
+                    },
+                    x: { ticks: { color: 'var(--muted)' } }
+                }
+            }
+        });
+    }
+    
+    // --- Low Stock Alerts ---
+    const lowParts = parts.filter(p => {
+        const stock = p.stock || 0;
+        const min = p.min_stock || p.minStock || 1;
+        return stock > 0 && stock <= min;
+    }).slice(0, 6);
+    const lowHtml = lowParts.length ? lowParts.map(p => `
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+                <div style="font-size:12px; font-weight:500">${escapeHtml(p.part_num || p.partNum)}</div>
+                <div style="font-size:11px; color:var(--muted)">${escapeHtml((p.description || p.desc || '').slice(0,50))}</div>
+            </div>
+            <span class="badge ${p.stock===0?'badge-danger':'badge-warn'}">${p.stock}</span>
+        </div>
+    `).join('') : '<div style="padding:16px; text-align:center">All stock levels healthy ✓</div>';
+    document.getElementById('lowStockList').innerHTML = lowHtml;
+    
+    // --- Recent Activity ---
+    const recent = [...activityLog].reverse().slice(0, 5);
+    const activityHtml = recent.length ? recent.map(a => `
+        <div class="activity-item">
+            <div class="activity-dot" style="background:${a.type==='stock'?'var(--accent)':a.type==='invoice'?'var(--gold)':'var(--success)'}"></div>
+            <div>
+                <div class="activity-text">${escapeHtml(a.text)}</div>
+                <div class="activity-time">${new Date(a.ts).toLocaleString()}</div>
+            </div>
+        </div>
+    `).join('') : '<div style="padding:16px; text-align:center">No recent activity</div>';
+    document.getElementById('activityFeed').innerHTML = activityHtml;
+}
     
     // Category chart data
     const categories = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
