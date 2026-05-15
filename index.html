@@ -79,7 +79,7 @@ async function apiFetch(path, options = {}) {
   return res.json();
 }
 </script>
-  <style>
+  <script>
 :root {
   --bg:#0d1b2a; --bg2:#112236; --bg3:#162c42; --surface:#1a3350;
   --surface2:#1f3d60; --border:#24527a; --border2:#2d6595;
@@ -2405,14 +2405,13 @@ function addLineItemById(partId) {
   const part = parts.find(p => String(p.id) === String(partId));
   if (!part) { showToast('Part not found', 'error'); return; }
   const pn = part.partNum || part.part_num || '';
-  const ds = part.desc || part.description || '';
+  const ds = part.desc    || part.description || '';
   const pr = Number(part.priceKsh || part.price_ksh || 0);
 
-  document.getElementById('partAutocomplete').style.display = 'none';
-  document.getElementById('partSearch').value = '';
+  document.getElementById('partAutocomplete').style.display='none';
+  document.getElementById('partSearch').value='';
   lineItems.push({ partId: part.id, desc: ds, partNum: pn, qty: 1, unitPrice: pr });
   renderLineItems();
-  calcTotals();   // <-- ADD THIS LINE
 }
 function removeLineItem(idx) { lineItems.splice(idx,1); renderLineItems(); }
 function updateLineItem(idx, field, val) {
@@ -2421,33 +2420,24 @@ function updateLineItem(idx, field, val) {
 }
 function renderLineItems() {
   const body = document.getElementById('lineItemBody');
-  if (!body) {
-    console.error('lineItemBody not found');
-    return;
-  }
   if (!lineItems.length) {
-    body.innerHTML = '<tr id="noItemsRow"><td colspan="5" style="text-align:center;color:var(--dim);padding:20px">No items added yet — search for parts above</td></tr>';
+    body.innerHTML='<tr id="noItemsRow"><td colspan="5" style="text-align:center;color:var(--dim);padding:20px">No items added yet — search for parts above</td></tr>';
   } else {
-    body.innerHTML = lineItems.map((item, i) => {
+    body.innerHTML = lineItems.map((item,i) => {
       const total = item.qty * item.unitPrice;
-      return `
-        <tr>
-          <td>
-            <div style="font-size:12px;font-weight:500">${esc(item.partNum)}</div>
-            <div style="font-size:11px;color:var(--muted)">${esc(item.desc.slice(0,60))}</div>
-          </td>
-          <td><input type="number" min="1" value="${item.qty}" class="input" style="width:60px;padding:4px 6px" onchange="updateLineItem(${i},'qty',this.value)"></td>
-          <td><input type="number" min="0" value="${item.unitPrice}" class="input" style="width:90px;padding:4px 6px" onchange="updateLineItem(${i},'unitPrice',this.value)"></td>
-          <td style="font-family:var(--font-mono);color:var(--gold)">KSH ${total.toLocaleString()}</td>
-          <td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td>
-        </tr>
-      `;
+      return `<tr>
+        <td>
+          <div style="font-size:12px;font-weight:500">${esc(item.partNum)}</div>
+          <div style="font-size:11px;color:var(--muted)">${esc(item.desc.slice(0,60))}</div>
+        </td>
+        <td><input type="number" min="1" value="${item.qty}" class="input" style="width:60px;padding:4px 6px" onchange="updateLineItem(${i},'qty',this.value)"/></td>
+        <td><input type="number" min="0" value="${item.unitPrice}" class="input" style="width:90px;padding:4px 6px" onchange="updateLineItem(${i},'unitPrice',this.value)"/></td>
+        <td style="font-family:var(--font-mono);color:var(--gold)">KSH ${total.toLocaleString()}</td>
+        <td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td>
+      </tr>`;
     }).join('');
   }
-  // Make sure calcTotals exists
-  if (typeof calcTotals === 'function') calcTotals();
-  else console.warn('calcTotals is not defined');
-}
+  calcTotals();
 }
 function calcTotals() {
   const subtotal = lineItems.reduce((s,i)=>s+(i.qty*i.unitPrice),0);
@@ -3929,9 +3919,7 @@ function buildInvoiceHTML(inv) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// M-PESA STK PUSH ENGINE// ═══════════════════════════════════════════════════════════════════
-// END OF SCRIPT
-// ═══════════════════════════════════════════════════════════════════
-</script>
+// M-PESA STK PUSH ENGINE
+  </script>
 </body>
 </html>
