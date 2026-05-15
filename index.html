@@ -2405,13 +2405,14 @@ function addLineItemById(partId) {
   const part = parts.find(p => String(p.id) === String(partId));
   if (!part) { showToast('Part not found', 'error'); return; }
   const pn = part.partNum || part.part_num || '';
-  const ds = part.desc    || part.description || '';
+  const ds = part.desc || part.description || '';
   const pr = Number(part.priceKsh || part.price_ksh || 0);
 
-  document.getElementById('partAutocomplete').style.display='none';
-  document.getElementById('partSearch').value='';
+  document.getElementById('partAutocomplete').style.display = 'none';
+  document.getElementById('partSearch').value = '';
   lineItems.push({ partId: part.id, desc: ds, partNum: pn, qty: 1, unitPrice: pr });
   renderLineItems();
+  calcTotals();   // <-- ADD THIS LINE
 }
 function removeLineItem(idx) { lineItems.splice(idx,1); renderLineItems(); }
 function updateLineItem(idx, field, val) {
