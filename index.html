@@ -11,74 +11,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script>
-// ═══════════════════════════════════════════════════════════════════
-// PRINTEX GLOBAL CONFIG — set these to YOUR deployed backend URL
-// ═══════════════════════════════════════════════════════════════════
-const PRINTEX_CONFIG = {
-  // Your Render backend URL (leave empty to use IndexedDB only)
-  // Example: 'https://printex-backend.onrender.com'
-  apiUrl: localStorage.getItem('printex_api_url') || '',
-
-  // Supabase public anon key + URL (used for direct queries as fallback)
-  supabaseUrl: localStorage.getItem('printex_supabase_url') || '',
-  supabaseAnonKey: localStorage.getItem('printex_supabase_anon_key') || '',
-};
-
-// ── FIELD NORMALISER ─────────────────────────────────────────────────
-// Maps ANY source (Supabase snake_case OR old IndexedDB camelCase) → frontend format
-function normPart(row) {
-  if (!row) return null;
-  return {
-    id:       row.id,
-    partNum:  row.part_num    || row.partNum    || '',
-    desc:     row.description || row.desc       || '',
-    category: row.category    || 'G',
-    stock:    Number(row.stock          ?? row.stock_qty   ?? 0),
-    minStock: Number(row.min_stock      ?? row.minStock    ?? 1),
-    priceKsh: Number(row.price_ksh      ?? row.cost_price_ksh ?? row.priceKsh ?? 0),
-    supplier: row.supplier    || '',
-    location: row.location    || '',
-    image:    row.image_url   || row.image      || null,
-  };
-}
-
-function normInvoice(row) {
-  if (!row) return null;
-  return {
-    id:            row.id,
-    invoiceNumber: row.invoice_number || row.invoiceNumber || '',
-    customer:      row.customer_name  || row.customer      || '',
-    date:          row.issue_date     || row.date          || '',
-    type:          row.type           || 'invoice',
-    subtotal:      Number(row.subtotal     || 0),
-    vat:           Number(row.vat         || 0),
-    grand:         Number(row.grand_total || row.grand || 0),
-    discountPct:   Number(row.overall_discount || row.discountPct || 0),
-    notes:         row.notes || '',
-    status:        row.status || 'draft',
-    paymentStatus: row.payment_status || row.paymentStatus || null,
-    paymentRef:    row.payment_ref    || row.paymentRef    || null,
-    items:         row.invoice_items  || row.items         || [],
-  };
-}
-
-// ── API FETCH WRAPPER ────────────────────────────────────────────────
-async function apiFetch(path, options = {}) {
-  const base = PRINTEX_CONFIG.apiUrl;
-  if (!base) throw new Error('NO_BACKEND'); // fall through to IndexedDB
-  const url = base.replace(/\/$/, '') + path;
-  const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
-</script>
 <style>
 :root {
   --bg:#0d1b2a; --bg2:#112236; --bg3:#162c42; --surface:#1a3350;
@@ -1610,56 +1542,21 @@ let currentTheme = 'dark';
 async function initApp() {
   try {
     await openDB();
-
-    // ── Try backend API first, fall back to IndexedDB ─────────────────
-    let partsFromApi = null;
-    let invoicesFromApi = null;
-
-    if (PRINTEX_CONFIG.apiUrl) {
-      try {
-        const [pData, iData] = await Promise.all([
-          apiFetch('/api/parts'),
-          apiFetch('/api/invoices'),
-        ]);
-        partsFromApi    = (pData    || []).map(normPart);
-        invoicesFromApi = (iData    || []).map(normInvoice);
-      } catch(apiErr) {
-        console.warn('API fetch failed, falling back to IndexedDB:', apiErr.message);
-      }
-    }
-
-    if (partsFromApi) {
-      parts = partsFromApi;
-      // Sync to IndexedDB for offline use
-      await dbClear('parts');
-      for (const p of parts) await dbPut('parts', p);
-    } else {
-      const raw = await dbGet('parts') || [];
-      parts = raw.map(normPart); // normalise even local data
-    }
-
-    if (invoicesFromApi) {
-      invoices = invoicesFromApi;
-      await dbClear('invoices');
-      for (const inv of invoices) await dbPut('invoices', inv);
-    } else {
-      const raw = await dbGet('invoices') || [];
-      invoices = raw.map(normInvoice);
-    }
-
+    parts = await dbGet('parts') || [];
+    invoices = await dbGet('invoices') || [];
     activityLog = await dbGet('activity') || [];
     const settingsArr = await dbGet('settings') || [];
     settings = {};
     settingsArr.forEach(s => settings[s.key] = s.value);
 
     if (parts.length === 0) await seedDefaultParts();
-    invoiceCounter = (await dbGet('settings','invoiceCounter'))?.value || (invoices.length + 1);
+    invoiceCounter = (await dbGet('settings','invoiceCounter'))?.value || 1;
 
     applySettings();
     checkLogin();
   } catch(e) {
     console.error('DB init error:', e);
-    parts = DEFAULT_PARTS.map(normPart);
+    parts = [...DEFAULT_PARTS];
     settings = {};
     checkLogin();
   }
@@ -1667,9 +1564,9 @@ async function initApp() {
 
 async function seedDefaultParts() {
   for (const p of DEFAULT_PARTS) {
-    await dbPut('parts', normPart({...p, image: null}));
+    await dbPut('parts', {...p, image: null});
   }
-  parts = (await dbGet('parts') || []).map(normPart);
+  parts = await dbGet('parts');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1719,6 +1616,177 @@ function getStoredUsers() {
 
 function saveStoredUsers(users) {
   localStorage.setItem('printex_users', JSON.stringify(users));
+}
+
+function saveSession(user, remember) {
+  const session = {
+    isLoggedIn: true,
+    id: user.id,
+    name: user.fullName || user.email,
+    email: user.email,
+    role: user.role || 'user',
+  };
+  sessionStorage.setItem('printex_session', JSON.stringify(session));
+  if (remember) {
+    localStorage.setItem('printex_remember', JSON.stringify(session));
+  }
+}
+
+function getSession() {
+  try {
+    const s = sessionStorage.getItem('printex_session');
+    if (s) return JSON.parse(s);
+    const r = localStorage.getItem('printex_remember');
+    if (r) return JSON.parse(r);
+  } catch {}
+  return null;
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  if (el) { el.innerHTML = '⚠️ ' + msg; el.style.display = 'block'; }
+  const ok = document.getElementById('authSuccess');
+  if (ok) ok.style.display = 'none';
+}
+
+function showAuthSuccess(msg) {
+  const el = document.getElementById('authSuccess');
+  if (el) { el.innerHTML = '✅ ' + msg; el.style.display = 'block'; }
+  const err = document.getElementById('authError');
+  if (err) err.style.display = 'none';
+}
+
+function clearAuthMessages() {
+  const e = document.getElementById('authError');
+  const s = document.getElementById('authSuccess');
+  if (e) e.style.display = 'none';
+  if (s) s.style.display = 'none';
+}
+
+function setBtnLoading(id, loading, html) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.style.opacity = loading ? '0.75' : '1';
+  if (html !== undefined) btn.innerHTML = html;
+}
+
+function togglePwd(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  if (icon) icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
+}
+
+function switchTab(tab) {
+  const isLogin = (tab === 'login');
+  document.getElementById('panelLogin').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('panelSignup').style.display = isLogin ? 'none' : 'block';
+  const lb = document.getElementById('tabLoginBtn');
+  const sb = document.getElementById('tabSignupBtn');
+  if (lb) {
+    lb.style.background = isLogin ? 'var(--accent)' : 'transparent';
+    lb.style.color = isLogin ? '#fff' : 'var(--muted)';
+  }
+  if (sb) {
+    sb.style.background = isLogin ? 'transparent' : 'var(--accent)';
+    sb.style.color = isLogin ? 'var(--muted)' : '#fff';
+  }
+  clearAuthMessages();
+}
+
+function doLogin() {
+  clearAuthMessages();
+  const email = document.getElementById('loginEmail')?.value.trim();
+  const pass = document.getElementById('loginPass')?.value;
+  const remember = document.getElementById('rememberMe')?.checked || false;
+  if (!email || !pass) return showAuthError('Please enter email and password.');
+  setBtnLoading('btnSignIn', true, '<i class="fa fa-spinner fa-spin"></i> Signing in...');
+  setTimeout(() => {
+    try {
+      const users = getStoredUsers();
+      const emailLower = email.toLowerCase();
+      const user = users.find(u =>
+        u.email.toLowerCase() === emailLower ||
+        (u.emailAlt && u.emailAlt.toLowerCase() === emailLower)
+      );
+      if (!user) throw new Error('No account found.');
+      if (user.password !== pass) throw new Error('Incorrect password.');
+      currentUser = { id: user.id, name: user.fullName, email: user.email, role: user.role };
+      saveSession(user, remember);
+      showAuthSuccess(`Welcome back, ${user.fullName || user.email}!`);
+      setTimeout(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        if (typeof showApp === 'function') showApp();
+        else location.reload();
+      }, 500);
+    } catch (err) {
+      showAuthError(err.message);
+      setBtnLoading('btnSignIn', false, '<i class="fa fa-sign-in-alt"></i> Sign In');
+    }
+  }, 80);
+}
+
+function doSignup() {
+  clearAuthMessages();
+  const fullName = document.getElementById('signupName')?.value.trim();
+  const email = document.getElementById('signupEmail')?.value.trim().toLowerCase();
+  const pass = document.getElementById('signupPass')?.value;
+  const pass2 = document.getElementById('signupPass2')?.value;
+  if (!fullName || !email || !pass) return showAuthError('Please fill all fields.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Invalid email address.');
+  if (pass.length < 6) return showAuthError('Password must be at least 6 characters.');
+  if (pass !== pass2) return showAuthError('Passwords do not match.');
+  setBtnLoading('btnCreateAccount', true, '<i class="fa fa-spinner fa-spin"></i> Creating account...');
+  setTimeout(() => {
+    try {
+      const users = getStoredUsers();
+      if (users.find(u => u.email === email)) throw new Error('Email already exists.');
+      const newUser = {
+        id: 'usr_' + Date.now(),
+        fullName,
+        email,
+        password: pass,
+        role: 'user',
+        createdAt: new Date().toISOString(),
+      };
+      users.push(newUser);
+      saveStoredUsers(users);
+      currentUser = { id: newUser.id, name: newUser.fullName, email: newUser.email, role: newUser.role };
+      saveSession(newUser, true);
+      showAuthSuccess(`Account created! Welcome, ${fullName}.`);
+      setTimeout(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        if (typeof showApp === 'function') showApp();
+        else location.reload();
+      }, 600);
+    } catch (err) {
+      showAuthError(err.message);
+      setBtnLoading('btnCreateAccount', false, '<i class="fa fa-user-plus"></i> Create Account');
+    }
+  }, 80);
+}
+
+function doQuickLogin() {
+  document.getElementById('loginEmail').value = 'admin';
+  document.getElementById('loginPass').value = 'admin123';
+  doLogin();
+}
+
+function showForgot() {
+  showAuthSuccess('Use demo account: admin / admin123');
+}
+
+function doLogout() {
+  sessionStorage.removeItem('printex_session');
+  localStorage.removeItem('printex_remember');
+  localStorage.removeItem('token');
+  currentUser = null;
+  location.reload();
 }
 
 // ── SESSION ─────────────────────────────────────────────────────────
@@ -2028,18 +2096,18 @@ function renderInventory(filtered) {
   const list = filtered || parts;
   const body = document.getElementById('invBody');
   if (!body) return;
-  const lowCount = parts.filter(p=>p.stock>0&&p.stock<=p.minStock).length;
+  const lowCount = parts.filter(p=>p.stock>0&&p.stock<=(p.minStock||1)).length;
   const badge = document.getElementById('lowBadge');
   if (badge) badge.textContent = lowCount;
 
   body.innerHTML = list.map(p => {
-    const st  = stockStatus(p);
-    const pn  = p.partNum  || p.part_num    || '—';
-    const ds  = p.desc     || p.description || '—';
-    const pr  = Number(p.priceKsh || p.price_ksh || 0);
-    const cat = p.category || 'G';
-    const img = p.image    || getCatImage(cat, p.id);
-    const sid = JSON.stringify(String(p.id));
+    const st   = stockStatus(p);
+    const pn   = String(p.partNum  || p.part_num    || '—');
+    const ds   = String(p.desc     || p.description || '—');
+    const pr   = Number(p.priceKsh || p.price_ksh   || 0);
+    const cat  = p.category || 'G';
+    const img  = p.image    || getCatImage(cat, p.id);
+    const sid  = JSON.stringify(String(p.id)); // always a safe quoted string in onclick
     return `<tr>
       <td><img src="${img}" class="part-thumb" onerror="this.src='${getCatImage(cat,p.id)}'" loading="lazy"/></td>
       <td><div class="part-num">${esc(pn)}</div></td>
@@ -2047,20 +2115,20 @@ function renderInventory(filtered) {
       <td><span class="badge badge-cat-${cat}">${cat}</span></td>
       <td>
         <div class="stock-ctrl">
-          <button class="stock-btn" onclick="adjustStockById(${sid},-1)" title="Decrease stock by 1">−</button>
-          <span class="stock-num ${p.stock===0?'stock-out':p.stock<=p.minStock?'stock-low':''}" title="Current stock">${p.stock}</span>
-          <button class="stock-btn" onclick="adjustStockById(${sid},1)"  title="Increase stock by 1">+</button>
+          <button class="stock-btn" onclick="adjustStock(${sid},-1)" title="Reduce stock by 1">−</button>
+          <span class="stock-num ${p.stock===0?'stock-out':p.stock<=(p.minStock||1)?'stock-low':''}">${p.stock}</span>
+          <button class="stock-btn" onclick="adjustStock(${sid},1)"  title="Add 1 to stock">+</button>
         </div>
       </td>
-      <td style="color:var(--muted);font-size:12px">${p.minStock}</td>
+      <td style="color:var(--muted);font-size:12px">${p.minStock||1}</td>
       <td><span class="price-ksh">KSH ${pr.toLocaleString()}</span></td>
       <td style="font-size:12px;color:var(--muted)">${esc(p.supplier||'')}</td>
       <td style="font-size:11px;color:var(--dim)">${esc(p.location||'')}</td>
       <td><span class="badge ${st.cls}">${st.label}</span></td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-outline btn-xs" onclick="openEditPartById(${sid})" title="Edit this part"><i class="fa fa-edit"></i></button>
-          <button class="btn btn-danger btn-xs"  onclick="deletePartById(${sid})"   title="Delete this part"><i class="fa fa-trash"></i></button>
+          <button class="btn btn-outline btn-xs" onclick="openEditPart(${sid})" title="Edit this part"><i class="fa fa-edit"></i></button>
+          <button class="btn btn-danger btn-xs"  onclick="deletePart(${sid})"   title="Delete this part"><i class="fa fa-trash"></i></button>
         </div>
       </td>
     </tr>`;
@@ -2068,114 +2136,71 @@ function renderInventory(filtered) {
 }
 
 function filterInventory() {
-  const q   = (document.getElementById('invSearch').value || '').toLowerCase();
-  const cat = document.getElementById('catFilter').value;
-  const status = document.getElementById('statusFilter').value;
+  const q      = (document.getElementById('invSearch')?.value   || '').toLowerCase();
+  const cat    =  document.getElementById('catFilter')?.value   || '';
+  const status =  document.getElementById('statusFilter')?.value || '';
   let f = parts;
   if (q) f = f.filter(p => {
-    const pn = (p.partNum||p.part_num||'').toLowerCase();
-    const ds = (p.desc||p.description||'').toLowerCase();
-    const sp = (p.supplier||'').toLowerCase();
-    return pn.includes(q)||ds.includes(q)||sp.includes(q);
+    const pn = String(p.partNum||p.part_num||'').toLowerCase();
+    const ds = String(p.desc||p.description||'').toLowerCase();
+    const sp = String(p.supplier||'').toLowerCase();
+    return pn.includes(q) || ds.includes(q) || sp.includes(q);
   });
-  if (cat) f = f.filter(p => p.category===cat);
-  if (status==='out') f = f.filter(p=>p.stock===0);
-  else if (status==='low') f = f.filter(p=>p.stock>0&&p.stock<=p.minStock);
-  else if (status==='ok') f = f.filter(p=>p.stock>p.minStock);
+  if (cat)              f = f.filter(p => p.category === cat);
+  if (status==='out')   f = f.filter(p => p.stock === 0);
+  else if (status==='low')  f = f.filter(p => p.stock > 0 && p.stock <= (p.minStock||1));
+  else if (status==='ok')   f = f.filter(p => p.stock > (p.minStock||1));
   renderInventory(f);
 }
 
 async function adjustStock(id, delta) {
+  // Works with both numeric (IndexedDB) and UUID (Supabase) IDs
   const part = parts.find(p => String(p.id) === String(id));
-  if (!part) return;
-  const newStock = Math.max(0, part.stock + delta);
+  if (!part) { showToast('Part not found', 'error'); return; }
+  const newStock = Math.max(0, (part.stock||0) + delta);
   part.stock = newStock;
-  try {
-    if (PRINTEX_CONFIG.apiUrl) {
-      await apiFetch(`/api/parts/${id}/stock`, { method:'PATCH', body: JSON.stringify({ new_stock: newStock }) });
-    }
-  } catch(e) { console.warn('Stock API failed, local only:', e.message); }
-  await dbPut('parts', part);
-  const pn = part.partNum || part.part_num || id;
+  try { await dbPut('parts', part); } catch {}
+  const pn = part.partNum || part.part_num || String(id);
   await logActivity(`Stock ${delta>0?'increased':'decreased'} for ${pn} → ${newStock}`, 'stock');
   filterInventory();
   showToast(`Stock updated: ${pn} → ${newStock}`, 'success');
 }
-async function adjustStockById(id, delta) { return adjustStock(id, delta); }
 
-function openEditPartById(id) {
+// ─── ADD / EDIT PART ───
+function openAddPart() {
+  document.getElementById('partModalTitle').textContent = 'Add New Part';
+  document.getElementById('editPartId').value = '';
+  ['fPartNum','fDesc','fSupplier','fPriceKsh','fLocation'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fCat').value      = 'A';
+  document.getElementById('fStock').value    = '0';
+  document.getElementById('fMinStock').value = '1';
+  document.getElementById('fImage').value    = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  openModal('partModal');
+}
+
+function openEditPart(id) {
+  // Works with both numeric and UUID
   const p = parts.find(x => String(x.id) === String(id));
-  if (!p) return;
+  if (!p) { showToast('Part not found — try refreshing', 'error'); return; }
   document.getElementById('partModalTitle').textContent = 'Edit Part';
-  document.getElementById('editPartId').value = p.id;
-  document.getElementById('fPartNum').value   = p.partNum  || p.part_num    || '';
-  document.getElementById('fCat').value        = p.category || 'G';
-  document.getElementById('fDesc').value       = p.desc     || p.description || '';
-  document.getElementById('fStock').value      = p.stock    ?? 0;
-  document.getElementById('fMinStock').value   = p.minStock || p.min_stock   || 1;
-  document.getElementById('fSupplier').value   = p.supplier || '';
-  document.getElementById('fPriceKsh').value   = p.priceKsh || p.price_ksh   || '';
-  document.getElementById('fLocation').value   = p.location || '';
+  document.getElementById('editPartId').value  = String(p.id);
+  document.getElementById('fPartNum').value    = p.partNum  || p.part_num    || '';
+  document.getElementById('fCat').value         = p.category || 'G';
+  document.getElementById('fDesc').value        = p.desc     || p.description || '';
+  document.getElementById('fStock').value       = p.stock    ?? 0;
+  document.getElementById('fMinStock').value    = p.minStock || p.min_stock   || 1;
+  document.getElementById('fSupplier').value    = p.supplier || '';
+  document.getElementById('fPriceKsh').value    = p.priceKsh || p.price_ksh   || '';
+  document.getElementById('fLocation').value    = p.location || '';
   const prev = document.getElementById('imgPreview');
   prev.src = p.image || getCatImage(p.category||'G', p.id);
   prev.style.display = 'block';
   openModal('partModal');
 }
-// Keep old names as aliases
-function openEditPart(id) { return openEditPartById(id); }
 
-async function deletePartById(id) {
-  const p = parts.find(x => String(x.id) === String(id));
-  const pn = p ? (p.partNum || p.part_num || 'this part') : 'this part';
-  if (!confirm(`Delete ${pn}?`)) return;
-  try {
-    if (PRINTEX_CONFIG.apiUrl) await apiFetch(`/api/parts/${id}`, { method: 'DELETE' });
-  } catch(e) { console.warn('Delete API failed:', e.message); }
-  try { await dbDelete('parts', isNaN(id) ? id : Number(id)); } catch {}
-  parts = parts.filter(x => String(x.id) !== String(id));
-  await logActivity(`Part deleted: ${pn}`, 'delete');
-  filterInventory();
-  showToast('Part deleted', 'warn');
-}
-function deletePart(id) { return deletePartById(id); }
-
-// ─── ADD / EDIT PART ───
-function openAddPart() {
-  document.getElementById('partModalTitle').textContent='Add New Part';
-  document.getElementById('editPartId').value='';
-  document.getElementById('fPartNum').value='';
-  document.getElementById('fCat').value='A';
-  document.getElementById('fDesc').value='';
-  document.getElementById('fStock').value='0';
-  document.getElementById('fMinStock').value='1';
-  document.getElementById('fSupplier').value='';
-  document.getElementById('fPriceKsh').value='';
-  document.getElementById('fLocation').value='';
-  document.getElementById('imgPreview').style.display='none';
-  document.getElementById('fImage').value='';
-  openModal('partModal');
-}
-function openEditPart(id) {
-  const p = parts.find(x=>x.id===id);
-  if (!p) return;
-  document.getElementById('partModalTitle').textContent='Edit Part';
-  document.getElementById('editPartId').value=id;
-  document.getElementById('fPartNum').value=p.partNum;
-  document.getElementById('fCat').value=p.category;
-  document.getElementById('fDesc').value=p.desc;
-  document.getElementById('fStock').value=p.stock;
-  document.getElementById('fMinStock').value=p.minStock;
-  document.getElementById('fSupplier').value=p.supplier||'';
-  document.getElementById('fPriceKsh').value=p.priceKsh||'';
-  document.getElementById('fLocation').value=p.location||'';
-  const prev = document.getElementById('imgPreview');
-  if (p.image) { prev.src=p.image; prev.style.display='block'; }
-  else {
-    const svg = getCatImage(p.category, p.id);
-    prev.src=svg; prev.style.display='block';
-  }
-  openModal('partModal');
-}
 function previewImage(input) {
   const file = input.files[0];
   if (!file) return;
@@ -2183,75 +2208,98 @@ function previewImage(input) {
   reader.onload = e => {
     const prev = document.getElementById('imgPreview');
     prev.src = e.target.result;
-    prev.style.display='block';
+    prev.style.display = 'block';
   };
   reader.readAsDataURL(file);
 }
+
 async function savePart() {
   const partNum = document.getElementById('fPartNum').value.trim();
-  const desc = document.getElementById('fDesc').value.trim();
-  if (!partNum||!desc) return showToast('Part number and description required','error');
+  const desc    = document.getElementById('fDesc').value.trim();
+  if (!partNum) return showToast('Part number / SKU is required', 'error');
+  if (!desc)    return showToast('Description is required', 'error');
 
-  const editId = document.getElementById('editPartId').value;
-  const imgFile = document.getElementById('fImage').files[0];
+  const editIdRaw = document.getElementById('editPartId').value;
+  const editId    = editIdRaw || null;
+  const imgFile   = document.getElementById('fImage').files[0];
 
-  const processAndSave = async (imgData) => {
-    const data = normPart({
-      partNum:  partNum,
-      desc:     desc,
-      category: document.getElementById('fCat').value,
-      stock:    parseInt(document.getElementById('fStock').value)||0,
-      minStock: parseInt(document.getElementById('fMinStock').value)||1,
-      supplier: document.getElementById('fSupplier').value.trim(),
-      priceKsh: parseFloat(document.getElementById('fPriceKsh').value)||0,
-      location: document.getElementById('fLocation').value.trim(),
-      image:    imgData,
-    });
+  // Show saving indicator
+  const saveBtn = document.querySelector('#partModal .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving…'; }
 
-    let savedPart = data;
+  const doSave = async (imgData) => {
     try {
-      if (PRINTEX_CONFIG.apiUrl) {
-        if (editId) {
-          savedPart = await apiFetch(`/api/parts/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
-          savedPart = normPart(savedPart);
-        } else {
-          savedPart = await apiFetch('/api/parts', { method: 'POST', body: JSON.stringify(data) });
-          savedPart = normPart(savedPart);
+      const payload = {
+        partNum,
+        desc,
+        category:  document.getElementById('fCat').value,
+        stock:     parseInt(document.getElementById('fStock').value)    || 0,
+        minStock:  parseInt(document.getElementById('fMinStock').value)  || 1,
+        supplier:  document.getElementById('fSupplier').value.trim(),
+        priceKsh:  parseFloat(document.getElementById('fPriceKsh').value) || 0,
+        location:  document.getElementById('fLocation').value.trim(),
+        image:     imgData,
+      };
+
+      if (editId) {
+        // Keep existing image if no new one uploaded
+        if (!imgData) {
+          const old = parts.find(p => String(p.id) === String(editId));
+          if (old) payload.image = old.image || null;
         }
+        payload.id = isNaN(editId) ? editId : parseInt(editId);
+        const saved = await dbPut('parts', payload);
+        payload.id = payload.id || saved;
+        const idx = parts.findIndex(p => String(p.id) === String(editId));
+        if (idx >= 0) parts[idx] = payload; else parts.push(payload);
+        await logActivity(`Part updated: ${partNum}`, 'part');
+        showToast(`✅ Part updated: ${partNum}`, 'success');
+      } else {
+        const newId  = await dbPut('parts', payload);
+        payload.id   = newId;
+        parts.push(payload);
+        await logActivity(`Part added: ${partNum}`, 'part');
+        showToast(`✅ Part added: ${partNum}`, 'success');
       }
-    } catch(e) { console.warn('Part API save failed, using local:', e.message); }
 
-    if (editId) {
-      savedPart.id = parseInt(editId);
-      if (!imgData) { const old=parts.find(p=>p.id===savedPart.id); if(old) savedPart.image=old.image||null; }
+      closeModal('partModal');
+      filterInventory();
+      renderDashboard();
+    } catch(e) {
+      showToast('Save failed: ' + e.message, 'error');
+      console.error('savePart error:', e);
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fa fa-save"></i> Save Part'; }
     }
-    const localSavedId = await dbPut('parts', savedPart);
-    if (!editId) savedPart.id = savedPart.id || localSavedId;
-
-    const idx = parts.findIndex(p => String(p.id) === String(savedPart.id));
-    if (idx >= 0) parts[idx] = savedPart; else parts.push(savedPart);
-
-    await logActivity(`Part ${editId?'updated':'added'}: ${partNum}`, 'part');
-    closeModal('partModal');
-    filterInventory();
-    showToast(`Part ${editId?'updated':'added'}: ${partNum}`, 'success');
   };
 
   if (imgFile) {
     const reader = new FileReader();
-    reader.onload = e => processAndSave(e.target.result);
+    reader.onload  = e => doSave(e.target.result);
+    reader.onerror = () => doSave(null);
     reader.readAsDataURL(imgFile);
   } else {
-    processAndSave(null);
+    doSave(null);
   }
 }
+
 async function deletePart(id) {
-  if (!confirm('Delete this part?')) return;
-  await dbDelete('parts', id);
-  parts = parts.filter(p=>p.id!==id);
-  await logActivity(`Part deleted (ID:${id})`, 'delete');
-  filterInventory();
-  showToast('Part deleted','warn');
+  const p  = parts.find(x => String(x.id) === String(id));
+  const pn = p ? (p.partNum || p.part_num || 'this part') : 'this part';
+  if (!confirm(`⚠️ Delete "${pn}"?\n\nThis cannot be undone.`)) return;
+  try {
+    // Try numeric delete first, then string
+    try { await dbDelete('parts', isNaN(id) ? id : parseInt(id)); } catch {
+      await dbDelete('parts', id);
+    }
+    parts = parts.filter(x => String(x.id) !== String(id));
+    await logActivity(`Part deleted: ${pn}`, 'delete');
+    filterInventory();
+    renderDashboard();
+    showToast(`🗑️ Deleted: ${pn}`, 'warn');
+  } catch(e) {
+    showToast('Delete failed: ' + e.message, 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2325,19 +2373,15 @@ function renderDashboard() {
 
   // Low stock list
   const lowParts = parts.filter(p=>p.stock<=p.minStock).slice(0,6);
-  document.getElementById('lowStockList').innerHTML = lowParts.length ? lowParts.map(p=>{
-    const pn  = p.partNum  || p.part_num    || '—';
-    const ds  = p.desc     || p.description || '';
-    const cat = p.category || 'G';
-    return `
+  document.getElementById('lowStockList').innerHTML = lowParts.length ? lowParts.map(p=>`
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <img src="${p.image||getCatImage(cat,p.id)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.src='${getCatImage(cat,p.id)}'"/>
+      <img src="${p.image||getCatImage(p.category,p.id)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.src='${getCatImage(p.category,p.id)}'"/>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(pn)}</div>
-        <div style="font-size:11px;color:var(--muted)">${esc(ds.slice(0,50))}…</div>
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.partNum)}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(p.desc.slice(0,50))}…</div>
       </div>
       <span class="badge ${p.stock===0?'badge-danger':'badge-warn'}">${p.stock}</span>
-    </div>`}).join('') : '<div style="color:var(--dim);text-align:center;padding:16px;font-size:13px">All stock levels healthy ✓</div>';
+    </div>`).join('') : '<div style="color:var(--dim);text-align:center;padding:16px;font-size:13px">All stock levels healthy ✓</div>';
 
   // Activity feed
   const recent = [...activityLog].reverse().slice(0,5);
@@ -2368,50 +2412,71 @@ function initCreateInvoice() {
 }
 
 function searchParts() {
-  const q = (document.getElementById('partSearch').value || '').trim().toLowerCase();
+  const q = (document.getElementById('partSearch')?.value || '').trim().toLowerCase();
   const list = document.getElementById('partAutocomplete');
-  if (!q) { list.style.display='none'; return; }
+  if (!list) return;
+  if (!q) { list.style.display = 'none'; return; }
 
   const matches = parts.filter(p => {
-    const pn = (p.partNum || p.part_num || '').toLowerCase();
-    const ds = (p.desc || p.description || '').toLowerCase();
-    const sp = (p.supplier || '').toLowerCase();
+    const pn = String(p.partNum  || p.part_num    || '').toLowerCase();
+    const ds = String(p.desc     || p.description || '').toLowerCase();
+    const sp = String(p.supplier || '').toLowerCase();
     return pn.includes(q) || ds.includes(q) || sp.includes(q);
-  }).slice(0,10);
+  }).slice(0, 10);
 
-  if (!matches.length) { list.style.display='none'; return; }
+  if (!matches.length) { list.style.display = 'none'; return; }
 
   list.innerHTML = matches.map(p => {
-    const pn  = p.partNum || p.part_num || '';
-    const ds  = p.desc || p.description || '';
-    const pr  = Number(p.priceKsh || p.price_ksh || 0);
+    const pn  = String(p.partNum  || p.part_num    || '');
+    const ds  = String(p.desc     || p.description || '');
+    const pr  = Number(p.priceKsh || p.price_ksh   || 0);
     const cat = p.category || 'G';
-    const safeId = JSON.stringify(String(p.id)); // always a quoted string in onclick
+    const sid = JSON.stringify(String(p.id)); // safe for UUID or int
     return `
-    <div class="autocomplete-item" onclick="addLineItemById(${safeId})">
-      <img src="${p.image||getCatImage(cat,p.id)}" class="autocomplete-thumb" onerror="this.src='${getCatImage(cat,p.id)}'"/>
-      <div>
-        <div style="font-weight:600;font-size:12px">${esc(pn)}</div>
-        <div style="font-size:11px;color:var(--muted)">${esc(ds.slice(0,55))}</div>
-        <div style="font-size:11px;color:var(--gold)">KSH ${pr.toLocaleString()} &nbsp;|&nbsp; Stock: <b>${p.stock}</b></div>
+    <div class="autocomplete-item" onclick="addLineItem(${sid})" title="Click to add to invoice">
+      <img src="${p.image || getCatImage(cat, p.id)}" class="autocomplete-thumb"
+           onerror="this.src='${getCatImage(cat, p.id)}'"/>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12px;color:var(--text)">${esc(pn)}</div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ds.slice(0,55))}</div>
+        <div style="font-size:11px;margin-top:2px">
+          <span style="color:var(--gold);font-weight:600">KSH ${pr.toLocaleString()}</span>
+          &nbsp;·&nbsp;
+          <span style="${p.stock===0?'color:var(--danger)':p.stock<=5?'color:var(--warn)':'color:var(--success)'}">
+            ${p.stock===0?'Out of stock':`${p.stock} in stock`}
+          </span>
+        </div>
       </div>
     </div>`;
   }).join('');
-  list.style.display='block';
+  list.style.display = 'block';
 }
 
-// Use string ID lookup so UUID and numeric IDs both work
-function addLineItemById(partId) {
-  const part = parts.find(p => String(p.id) === String(partId));
-  if (!part) { showToast('Part not found', 'error'); return; }
-  const pn = part.partNum || part.part_num || '';
-  const ds = part.desc    || part.description || '';
-  const pr = Number(part.priceKsh || part.price_ksh || 0);
+document.addEventListener('click', e => {
+  if (!e.target.closest('#partSearch') && !e.target.closest('#partAutocomplete')) {
+    const l = document.getElementById('partAutocomplete');
+    if (l) l.style.display = 'none';
+  }
+});
 
-  document.getElementById('partAutocomplete').style.display='none';
-  document.getElementById('partSearch').value='';
+function addLineItem(partId) {
+  // Find by string comparison so UUID and numeric both work
+  const part = parts.find(p => String(p.id) === String(partId));
+  if (!part) { showToast('Part not found — try refreshing the page', 'error'); return; }
+
+  const pn = String(part.partNum  || part.part_num    || '');
+  const ds = String(part.desc     || part.description || '');
+  const pr = Number(part.priceKsh || part.price_ksh   || 0);
+
+  if (part.stock === 0) {
+    if (!confirm(`⚠️ "${pn}" is OUT OF STOCK.\nAdd it to the invoice anyway (quotation only)?`)) return;
+  }
+
+  document.getElementById('partAutocomplete').style.display = 'none';
+  document.getElementById('partSearch').value = '';
   lineItems.push({ partId: part.id, desc: ds, partNum: pn, qty: 1, unitPrice: pr });
   renderLineItems();
+  showToast(`Added: ${pn}`, 'success');
 }
 function removeLineItem(idx) { lineItems.splice(idx,1); renderLineItems(); }
 function updateLineItem(idx, field, val) {
@@ -2461,13 +2526,12 @@ async function saveInvoice(type) {
   const customer = document.getElementById('invCustomer').value.trim();
   if (!customer) return showToast('Customer name required','error');
 
-  // Stock validation
+  // Stock check
   if (type==='invoice') {
     for (const item of lineItems) {
-      const part = parts.find(p=>String(p.id)===String(item.partId));
+      const part = parts.find(p=>p.id===item.partId);
       if (part && item.qty > part.stock) {
-        const pn = part.partNum || part.part_num || item.partNum;
-        return showToast(`Insufficient stock for ${pn}: need ${item.qty}, have ${part.stock}`,'error');
+        return showToast(`Insufficient stock for ${item.partNum}: need ${item.qty}, have ${part.stock}`,'error');
       }
     }
   }
@@ -2477,31 +2541,16 @@ async function saveInvoice(type) {
   const invRecord = {
     invoiceNumber: customInvNum,
     date: document.getElementById('invDate').value,
-    customer,
-    notes: document.getElementById('invNotes').value,
-    type,
-    items: JSON.parse(JSON.stringify(lineItems)),
+    customer, notes: document.getElementById('invNotes').value,
+    type, items: JSON.parse(JSON.stringify(lineItems)),
     subtotal: tots.subtotal, discountPct: tots.disc, discountAmt: tots.discAmt,
     vat: tots.vat, vatRate: tots.vatRate*100, grand: tots.grand,
     createdAt: new Date().toISOString(),
   };
 
-  // Try backend first
-  let savedInvoice = null;
-  try {
-    if (PRINTEX_CONFIG.apiUrl) {
-      savedInvoice = await apiFetch('/api/invoices', {
-        method: 'POST',
-        body: JSON.stringify(invRecord),
-      });
-      savedInvoice = normInvoice(savedInvoice);
-    }
-  } catch(e) { console.warn('Invoice API save failed, using local:', e.message); }
-
-  // Deduct stock locally
   if (type==='invoice') {
     for (const item of lineItems) {
-      const part = parts.find(p=>String(p.id)===String(item.partId));
+      const part = parts.find(p=>p.id===item.partId);
       if (part) {
         part.stock = Math.max(0, part.stock - item.qty);
         await dbPut('parts', part);
@@ -2511,8 +2560,8 @@ async function saveInvoice(type) {
   }
 
   const savedId = await dbPut('invoices', invRecord);
-  invRecord.id = (savedInvoice && savedInvoice.id) || savedId;
-  invoices.push(savedInvoice || invRecord);
+  invRecord.id = savedId;
+  invoices.push(invRecord);
 
   invoiceCounter++;
   await dbPut('settings',{key:'invoiceCounter',value:invoiceCounter});
@@ -2745,22 +2794,114 @@ function renderReports() {
   ].map(k=>`<div class="report-stat"><div class="report-stat-num" style="color:var(--accent)">${k.value}</div><div class="report-stat-label">${k.label}</div></div>`).join('');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT — Excel-compatible CSV (UTF-8 BOM so Excel opens correctly)
+// ═══════════════════════════════════════════════════════════════════
+
+/** Build a properly-escaped CSV row */
+function csvRow(arr) {
+  return arr.map(v => {
+    const s = String(v === null || v === undefined ? '' : v);
+    // Always quote; escape inner quotes by doubling them
+    return '"' + s.replace(/"/g, '""') + '"';
+  }).join(',');
+}
+
+/** Download a UTF-8 BOM CSV — opens natively in Microsoft Excel */
+function downloadExcelCSV(rows, filename) {
+  const BOM = '\uFEFF'; // Excel needs this to detect UTF-8
+  const csv = BOM + rows.map(csvRow).join('\r\n'); // \r\n = Windows line endings Excel prefers
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename.endsWith('.csv') ? filename : filename + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`📊 Exported: ${a.download}`, 'success');
+}
+
+function exportCSV() {
+  const now  = new Date().toLocaleDateString('en-KE').replace(/\//g,'-');
+  const header = [
+    'ID','SKU / Part Number','Category','Description',
+    'Current Stock','Min Stock','Price (KSH)',
+    'Supplier','Warehouse Location','Stock Status'
+  ];
+  const rows = [header, ...parts.map(p => {
+    const pn  = p.partNum  || p.part_num    || '';
+    const ds  = p.desc     || p.description || '';
+    const pr  = Number(p.priceKsh || p.price_ksh || 0);
+    const ms  = p.minStock || p.min_stock   || 1;
+    const st  = p.stock === 0 ? 'Out of Stock' : p.stock <= ms ? 'Low Stock' : 'In Stock';
+    return [p.id, pn, p.category||'', ds, p.stock||0, ms, pr, p.supplier||'', p.location||'', st];
+  })];
+  downloadExcelCSV(rows, `Printex_Inventory_${now}.csv`);
+}
+
 function exportReportCSV(type) {
-  let rows, fname;
-  if (type==='out') {
-    const data = parts.filter(p=>p.stock===0);
-    rows = [['SKU','Description','Min Stock','Supplier','Location'],...data.map(p=>[p.partNum,p.desc,p.minStock,p.supplier||'',p.location||''])];
-    fname='out_of_stock.csv';
-  } else if (type==='low') {
-    const data = parts.filter(p=>p.stock>0&&p.stock<=p.minStock);
-    rows = [['SKU','Description','Stock','Min Stock','Price KSH'],...data.map(p=>[p.partNum,p.desc,p.stock,p.minStock,p.priceKsh||0])];
-    fname='low_stock.csv';
-  } else {
-    rows = [['Invoice #','Date','Customer','Items','Subtotal','VAT','Grand Total','Type'],...invoices.map(i=>[i.invoiceNumber,i.date,i.customer,i.items.length,Math.round(i.subtotal),Math.round(i.vat||0),Math.round(i.grand),i.type])];
-    fname='sales_summary.csv';
+  const now = new Date().toLocaleDateString('en-KE').replace(/\//g,'-');
+  let rows, filename;
+
+  if (type === 'out') {
+    const data = parts.filter(p => (p.stock||0) === 0);
+    rows = [
+      ['SKU / Part Number','Description','Category','Min Stock Required','Supplier','Location'],
+      ...data.map(p => [
+        p.partNum||p.part_num||'', p.desc||p.description||'',
+        p.category||'', p.minStock||p.min_stock||1,
+        p.supplier||'', p.location||''
+      ])
+    ];
+    filename = `Printex_OutOfStock_${now}.csv`;
+    if (!data.length) { showToast('No out-of-stock items to export', 'warn'); return; }
+
+  } else if (type === 'low') {
+    const data = parts.filter(p => (p.stock||0) > 0 && (p.stock||0) <= (p.minStock||p.min_stock||1));
+    rows = [
+      ['SKU / Part Number','Description','Category','Current Stock','Min Stock','Price (KSH)','Supplier'],
+      ...data.map(p => [
+        p.partNum||p.part_num||'', p.desc||p.description||'',
+        p.category||'', p.stock||0, p.minStock||p.min_stock||1,
+        Number(p.priceKsh||p.price_ksh||0), p.supplier||''
+      ])
+    ];
+    filename = `Printex_LowStock_${now}.csv`;
+    if (!data.length) { showToast('No low-stock items to export', 'warn'); return; }
+
+  } else { // sales
+    rows = [
+      ['Invoice Number','Date','Customer','No. of Items','Subtotal (KSH)','VAT (KSH)','Grand Total (KSH)','Type','Status'],
+      ...invoices.map(i => [
+        i.invoiceNumber||'', i.date||'', i.customer||'',
+        (i.items||[]).length,
+        Math.round(i.subtotal||0),
+        Math.round(i.vat||0),
+        Math.round(i.grand||0),
+        i.type||'invoice',
+        i.paymentStatus||i.status||'draft'
+      ])
+    ];
+    filename = `Printex_Sales_${now}.csv`;
+    if (!invoices.length) { showToast('No invoices to export', 'warn'); return; }
   }
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  downloadFile(csv, fname, 'text/csv');
+
+  downloadExcelCSV(rows, filename);
+}
+
+// Generic file download (JSON, txt, etc.)
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2805,14 +2946,7 @@ async function clearAllData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BACKUP / EXPORT
-// ═══════════════════════════════════════════════════════════════════
-function exportCSV() {
-  const rows = [['ID','SKU','Category','Description','Stock','Min Stock','Price KSH','Supplier','Location','Status'],
-    ...parts.map(p=>[p.id,p.partNum,p.category,p.desc,p.stock,p.minStock,p.priceKsh||0,p.supplier||'',p.location||'',p.stock===0?'Out of Stock':p.stock<=p.minStock?'Low Stock':'In Stock'])];
-  const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  downloadFile(csv,'printex_inventory.csv','text/csv');
-}
+// HELPERS
 function exportBackup() {
   const backup = { exportDate:new Date().toISOString(), parts:parts.map(p=>({...p,image:p.image?'[BASE64]':null})), invoices, settings, version:2 };
   downloadFile(JSON.stringify(backup,null,2),'printex_backup.json','application/json');
@@ -2844,8 +2978,6 @@ async function importBackup(event) {
 // ═══════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
 });
@@ -3920,6 +4052,3 @@ function buildInvoiceHTML(inv) {
 
 // ═══════════════════════════════════════════════════════════════════
 // M-PESA STK PUSH ENGINE
-  </script>
-</body>
-</html>
