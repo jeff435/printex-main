@@ -2420,24 +2420,33 @@ function updateLineItem(idx, field, val) {
 }
 function renderLineItems() {
   const body = document.getElementById('lineItemBody');
+  if (!body) {
+    console.error('lineItemBody not found');
+    return;
+  }
   if (!lineItems.length) {
-    body.innerHTML='<tr id="noItemsRow"><td colspan="5" style="text-align:center;color:var(--dim);padding:20px">No items added yet — search for parts above</td></tr>';
+    body.innerHTML = '<tr id="noItemsRow"><td colspan="5" style="text-align:center;color:var(--dim);padding:20px">No items added yet — search for parts above</td></tr>';
   } else {
-    body.innerHTML = lineItems.map((item,i) => {
+    body.innerHTML = lineItems.map((item, i) => {
       const total = item.qty * item.unitPrice;
-      return `<tr>
-        <td>
-          <div style="font-size:12px;font-weight:500">${esc(item.partNum)}</div>
-          <div style="font-size:11px;color:var(--muted)">${esc(item.desc.slice(0,60))}</div>
-        </td>
-        <td><input type="number" min="1" value="${item.qty}" class="input" style="width:60px;padding:4px 6px" onchange="updateLineItem(${i},'qty',this.value)"/></td>
-        <td><input type="number" min="0" value="${item.unitPrice}" class="input" style="width:90px;padding:4px 6px" onchange="updateLineItem(${i},'unitPrice',this.value)"/></td>
-        <td style="font-family:var(--font-mono);color:var(--gold)">KSH ${total.toLocaleString()}</td>
-        <td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td>
-      </tr>`;
+      return `
+        <tr>
+          <td>
+            <div style="font-size:12px;font-weight:500">${esc(item.partNum)}</div>
+            <div style="font-size:11px;color:var(--muted)">${esc(item.desc.slice(0,60))}</div>
+          </td>
+          <td><input type="number" min="1" value="${item.qty}" class="input" style="width:60px;padding:4px 6px" onchange="updateLineItem(${i},'qty',this.value)"></td>
+          <td><input type="number" min="0" value="${item.unitPrice}" class="input" style="width:90px;padding:4px 6px" onchange="updateLineItem(${i},'unitPrice',this.value)"></td>
+          <td style="font-family:var(--font-mono);color:var(--gold)">KSH ${total.toLocaleString()}</td>
+          <td><button class="btn btn-danger btn-xs" onclick="removeLineItem(${i})"><i class="fa fa-times"></i></button></td>
+        </tr>
+      `;
     }).join('');
   }
-  calcTotals();
+  // Make sure calcTotals exists
+  if (typeof calcTotals === 'function') calcTotals();
+  else console.warn('calcTotals is not defined');
+}
 }
 function calcTotals() {
   const subtotal = lineItems.reduce((s,i)=>s+(i.qty*i.unitPrice),0);
