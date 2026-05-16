@@ -1637,7 +1637,16 @@ async function doLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass })
     });
-    const data = await response.json();
+    
+    let data;
+    const text = await response.text();
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      console.error('JSON Parse error:', e, 'Raw text:', text);
+      throw new Error('Server returned invalid data format. Please try again.');
+    }
+
     if (!response.ok) throw new Error(data.error || 'Login failed');
 
     localStorage.setItem('token', data.token);
@@ -1675,7 +1684,16 @@ async function doSignup() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: pass, fullName })
     });
-    const data = await response.json();
+    
+    let data;
+    const text = await response.text();
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      console.error('JSON Parse error:', e, 'Raw text:', text);
+      throw new Error('Server returned invalid data format. Please try again.');
+    }
+
     if (!response.ok) throw new Error(data.error || 'Signup failed');
 
     localStorage.setItem('token', data.token);
