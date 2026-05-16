@@ -4051,4 +4051,719 @@ function buildInvoiceHTML(inv) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// M-PESA STK PUSH ENGINE
+// M-PESA ENGINE
+// ═══════════════════════════════════════════════════════════════════
+let mpesaCurrentInvoiceId = null;
+let mpesaPollTimer = null;
+const MPESA_TILL = '4977712';
+const MPESA_DEFAULT_SERVER = localStorage.getItem('printex_mpesa_server') || '';
+
+function getMpesaServerUrl() {
+  const el = document.getElementById('mpesaServerUrl');
+  const url = (el ? el.value.trim() : '') || MPESA_DEFAULT_SERVER;
+  if (url) localStorage.setItem('printex_mpesa_server', url);
+  return url.replace(/\/$/, '');
+}
+
+function openMpesaModal(invoiceId) {
+  const inv = invoices.find(i => String(i.id) === String(invoiceId));
+  if (!inv) return showToast('Invoice not found', 'error');
+  mpesaCurrentInvoiceId = invoiceId;
+  document.getElementById('mpesaInvNum').textContent     = inv.invoiceNumber || '';
+  document.getElementById('mpesaCustomer').textContent   = inv.customer || '';
+  document.getElementById('mpesaAmount').textContent     = `KSH ${Math.round(inv.grand||0).toLocaleString()}`;
+  document.getElementById('mpesaPhone').value            = '';
+  const urlEl = document.getElementById('mpesaServerUrl');
+  if (urlEl) urlEl.value = MPESA_DEFAULT_SERVER;
+  document.getElementById('mpesaStatusBox').style.display = 'none';
+  document.getElementById('mpesaStatusBox').innerHTML    = '';
+  document.getElementById('mpesaPhoneField').style.display = 'block';
+  const uf = document.getElementById('mpesaUrlField');
+  if (uf) uf.style.display = 'block';
+  document.getElementById('mpesaFooter').style.display   = 'flex';
+  document.getElementById('mpesaSendBtn').disabled       = false;
+  renderMpesaHistory(invoiceId);
+  openModal('mpesaModal');
+}
+
+function closeMpesaModal() {
+  if (mpesaPollTimer) { clearInterval(mpesaPollTimer); mpesaPollTimer = null; }
+  closeModal('mpesaModal');
+}
+
+function renderMpesaHistory(invoiceId) {
+  const allP = JSON.parse(localStorage.getItem('printex_payments') || '[]');
+  const invP = allP.filter(p => String(p.invoiceId) === String(invoiceId));
+  const wrap = document.getElementById('mpesaPayHistoryWrap');
+  const body = document.getElementById('mpesaPayHistory');
+  if (!wrap || !body) return;
+  if (!invP.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  body.innerHTML = invP.map(p => `
+    <div class="payment-history-item">
+      <div><div style="font-weight:500">${p.phone||''}</div><div style="color:var(--dim);font-size:11px">${new Date(p.ts).toLocaleString('en-KE')}</div></div>
+      <div style="text-align:right"><div style="color:var(--mpesa);font-weight:600">KSH ${(p.amount||0).toLocaleString()}</div><div style="font-size:11px">Ref: ${p.mpesaRef||'—'}</div></div>
+      <span class="badge ${p.status==='success'?'badge-success':p.status==='failed'?'badge-danger':'badge-warn'}">${p.status||'pending'}</span>
+    </div>`).join('');
+}
+
+function savePaymentRecord(record) {
+  const all = JSON.parse(localStorage.getItem('printex_payments') || '[]');
+  all.push(record);
+  localStorage.setItem('printex_payments', JSON.stringify(all));
+}
+
+function validateMpesaPhone(raw) {
+  const d = String(raw).replace(/\D/g,'');
+  if (d.length===9  && d.startsWith('7')) return '254'+d;
+  if (d.length===10 && d.startsWith('07')) return '254'+d.slice(1);
+  if (d.length===12 && d.startsWith('254')) return d;
+  return null;
+}
+
+function showMpesaStatus(type, html) {
+  const box = document.getElementById('mpesaStatusBox');
+  if (!box) return;
+  box.style.display = 'block';
+  box.className = `mpesa-status-box ${type}`;
+  box.innerHTML = html;
+}
+
+function retryMpesaPayment() {
+  if (mpesaPollTimer) { clearInterval(mpesaPollTimer); mpesaPollTimer = null; }
+  const inv = invoices.find(i => String(i.id) === String(mpesaCurrentInvoiceId));
+  if (inv) openMpesaModal(mpesaCurrentInvoiceId);
+}
+
+async function markInvoicePaid(invoiceId, mpesaRef) {
+  const inv = invoices.find(i => String(i.id) === String(invoiceId));
+  if (!inv) return;
+  inv.paymentStatus = 'paid';
+  inv.paymentRef    = mpesaRef;
+  inv.paidAt        = new Date().toISOString();
+  await dbPut('invoices', inv).catch(() => {});
+  renderInvoiceList();
+  await logActivity(`Invoice ${inv.invoiceNumber} paid via M-Pesa (Ref: ${mpesaRef})`, 'invoice').catch(() => {});
+  showToast(`✅ Invoice ${inv.invoiceNumber} marked as PAID`, 'success');
+}
+
+async function markMpesaPaidManually() {
+  const ref = 'MANUAL-' + Date.now();
+  await markInvoicePaid(mpesaCurrentInvoiceId, ref);
+  showMpesaStatus('success', `
+    <div style="font-size:36px">✅</div>
+    <div style="font-weight:700;color:var(--mpesa);font-size:16px;margin-top:8px">Marked as Paid</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">Invoice manually marked as paid</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:2px">Ref: ${ref}</div>
+    <button class="btn btn-success" style="margin-top:12px;width:100%;justify-content:center" onclick="closeMpesaModal()">Done</button>
+  `);
+}
+
+function updatePaymentRecord(updated) {
+  const all = JSON.parse(localStorage.getItem('printex_payments') || '[]');
+  const idx = all.findIndex(p => p.checkoutId === updated.checkoutId);
+  if (idx >= 0) all[idx] = updated; else all.push(updated);
+  localStorage.setItem('printex_payments', JSON.stringify(all));
+  renderMpesaHistory(mpesaCurrentInvoiceId);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAYMENT TOOL MODALS (Paybill, Bank, Till)
+// ═══════════════════════════════════════════════════════════════════
+const PAYMENT_INFO = {
+  mpesa:   { icon:'📱', title:'M-Pesa STK Push',         color:'var(--mpesa)',
+             fields:[{label:'Till Number (Buy Goods)', value:'4977712', copy:true},{label:'Business Name', value:'PRINTEX ENGINEERS LTD', copy:false}],
+             action:{label:'Send STK Push to Customer', fn:'promptMpesaQuick()'}, note:'Customer receives a prompt on their phone to enter their M-Pesa PIN.' },
+  paybill: { icon:'🏦', title:'Lipa na M-Pesa Paybill',  color:'var(--accent)',
+             fields:[{label:'Paybill Number', value:'880100', copy:true},{label:'Account Number', value:'051501', copy:true},{label:'Account Name', value:'PRINTEX ENGINEERS LTD', copy:false}],
+             note:'Customer: M-Pesa → Lipa na M-Pesa → Pay Bill → enter Paybill then Account.' },
+  bank:    { icon:'🏛️', title:'Bank Transfer (NCBA)',     color:'var(--gold)',
+             fields:[{label:'Bank', value:'NCBA BANK KENYA PLC', copy:false},{label:'Branch', value:'LUNGA LUNGA', copy:false},{label:'Account Number', value:'3026970037', copy:true},{label:'SWIFT Code', value:'CBAFKENX', copy:true},{label:'Account Name', value:'PRINTEX ENGINEERS LTD', copy:false}],
+             note:'Allow 1–3 business days for clearance.' },
+  till:    { icon:'📲', title:'Buy Goods (Till Number)', color:'var(--success)',
+             fields:[{label:'Till Number', value:'4977712', copy:true},{label:'Business Name', value:'PRINTEX ENGINEERS LTD', copy:false}],
+             note:'Customer: M-Pesa → Lipa na M-Pesa → Buy Goods → enter Till Number.' },
+};
+
+let _currentPayTool = null;
+function openPayToolModal(type) {
+  const info = PAYMENT_INFO[type];
+  if (!info) return;
+  _currentPayTool = type;
+  document.getElementById('payToolModalTitle').textContent = info.title;
+  document.getElementById('payToolShareBtn').style.display = 'flex';
+  document.getElementById('payToolModalBody').innerHTML = `
+    <div class="pay-modal-header">
+      <div class="pay-modal-icon">${info.icon}</div>
+      <div class="pay-modal-title" style="color:${info.color}">${info.title}</div>
+    </div>
+    ${info.fields.map(f => `
+      <div class="pay-info-row">
+        <div><div class="pay-info-label">${esc(f.label)}</div><div class="pay-info-value">${esc(f.value)}</div></div>
+        ${f.copy ? `<button class="copy-btn" onclick="copyPayValue('${esc(f.value)}',this)" title="Copy ${f.label}"><i class="fa fa-copy"></i> Copy</button>` : ''}
+      </div>`).join('')}
+    ${info.action ? `<button class="btn btn-mpesa" style="width:100%;justify-content:center;margin-top:8px" onclick="${info.action.fn}"><span>📱</span> ${info.action.label}</button>` : ''}
+    <div style="margin-top:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);font-size:11px;color:var(--muted);line-height:1.6">ℹ️ ${info.note}</div>`;
+  openModal('payToolModal');
+  logAIAction(`💳 Opened ${info.title} details`);
+}
+
+function copyPayValue(value, btn) {
+  navigator.clipboard.writeText(value).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = value; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }).finally(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+    showToast(`Copied: ${value}`, 'success');
+  });
+}
+
+function sharePaymentDetails() {
+  const info = PAYMENT_INFO[_currentPayTool];
+  if (!info) return;
+  const text = `PRINTEX ENGINEERS LIMITED\n${info.title}\n\n${info.fields.map(f=>`${f.label}: ${f.value}`).join('\n')}\n\n${info.note}`;
+  if (navigator.share) navigator.share({ title:'Printex Payment Details', text }).catch(()=>{});
+  else navigator.clipboard.writeText(text).then(() => showToast('All details copied ✓', 'success'));
+}
+
+function promptMpesaQuick() {
+  closeModal('payToolModal');
+  const unpaid = invoices.filter(i => i.type==='invoice' && !i.paymentStatus);
+  if (unpaid.length) openMpesaModal(unpaid[unpaid.length-1].id);
+  else { showToast('No unpaid invoices. Create one first.', 'warn'); showPage('createInvoice', document.querySelectorAll('.nav-item')[4]); }
+}
+
+function handleAIPaymentIntent(msg) {
+  const l = (msg||'').toLowerCase();
+  if (l.includes('mpesa')||l.includes('m-pesa')||l.includes('stk')) { openPayToolModal('mpesa'); return true; }
+  if (l.includes('paybill')) { openPayToolModal('paybill'); return true; }
+  if (l.includes('bank')||l.includes('ncba')||l.includes('transfer')) { openPayToolModal('bank'); return true; }
+  if (l.includes('till')) { openPayToolModal('till'); return true; }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AI ENGINE
+// ═══════════════════════════════════════════════════════════════════
+let aiHistory = [];
+let aiFileData = null;
+let aiActionLogArr = [];
+let aiAlertTimer = null;
+
+let _aiKeyMemory = localStorage.getItem('printex_ai_key') || '';
+
+function getAIKey() { return _aiKeyMemory || localStorage.getItem('printex_ai_key') || ''; }
+
+function onAIKeyInput(val) {
+  const msg = document.getElementById('keyValidationMsg');
+  if (!val) { if(msg) msg.style.display='none'; return; }
+  if (msg) {
+    msg.style.display = 'flex';
+    msg.innerHTML = (val.startsWith('sk-ant-') && val.length > 20)
+      ? `<i class="fa fa-check-circle" style="color:var(--success)"></i><span style="color:var(--success)">Format valid</span>`
+      : `<i class="fa fa-times-circle" style="color:var(--warn)"></i><span style="color:var(--warn)">Key should start with sk-ant-</span>`;
+  }
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('aiKeyInput');
+  const icon = document.getElementById('keyEyeIcon');
+  if (!inp) return;
+  if (inp.type==='password') { inp.type='text'; if(icon) icon.className='fa fa-eye-slash'; }
+  else { inp.type='password'; if(icon) icon.className='fa fa-eye'; }
+}
+
+async function saveAIKey() {
+  const inp = document.getElementById('aiKeyInput');
+  const key = inp ? inp.value.trim() : '';
+  if (!key) return setKeyStatus('invalid','❌ Please enter an API key');
+  if (!key.startsWith('sk-ant-')) return setKeyStatus('invalid','❌ Key must start with sk-ant-');
+  if (key.length < 40) return setKeyStatus('invalid','❌ Key looks too short');
+  const btn = document.getElementById('saveKeyBtn');
+  if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:5px"></span> Verifying...'; }
+  setKeyStatus('testing','⏳ Testing connection...');
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'Hi'}]})});
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok && r.status !== 429) throw new Error(d.error?.message || `HTTP ${r.status}`);
+    _aiKeyMemory = key;
+    localStorage.setItem('printex_ai_key', key);
+    const si = document.getElementById('settingsApiKey');
+    if (si) si.value = key;
+    setKeyStatus('valid','✅ Key verified & saved — AI ready!');
+    updateAIStatus(true);
+    showToast('Claude API key saved ✓', 'success');
+    renderAIContext();
+  } catch(e) {
+    if (e.message.includes('429')||e.message.includes('rate')) {
+      _aiKeyMemory = key; localStorage.setItem('printex_ai_key', key);
+      setKeyStatus('valid','✅ Saved (rate limited but valid)'); updateAIStatus(true);
+    } else { setKeyStatus('invalid',`❌ ${e.message}`); updateAIStatus(false); }
+  } finally {
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa fa-save"></i> Save & Verify'; }
+  }
+}
+
+function setKeyStatus(type, msg) {
+  const row = document.getElementById('keyStatusRow');
+  if (!row) return;
+  row.style.display = 'block';
+  const styles = { valid:['var(--success-dim)','var(--success)','var(--success)'], invalid:['var(--danger-dim)','var(--danger)','var(--danger)'], testing:['var(--warn-dim)','var(--warn)','var(--warn)'] };
+  const [bg, border, color] = styles[type] || styles.invalid;
+  row.style.cssText = `display:block;padding:8px 10px;border-radius:var(--r);font-size:11px;margin-bottom:8px;border:1px solid ${border};background:${bg};color:${color}`;
+  row.textContent = msg;
+}
+
+function clearAIKey() {
+  _aiKeyMemory=''; localStorage.removeItem('printex_ai_key');
+  const i=document.getElementById('aiKeyInput'); if(i) i.value='';
+  const s=document.getElementById('settingsApiKey'); if(s) s.value='';
+  const m=document.getElementById('keyValidationMsg'); if(m) m.style.display='none';
+  const r=document.getElementById('keyStatusRow'); if(r) r.style.display='none';
+  updateAIStatus(false); showToast('API key cleared','warn');
+}
+
+function saveAIKeyFromSettings() {
+  const key=(document.getElementById('settingsApiKey')?.value||'').trim();
+  if(!key) return;
+  const inp=document.getElementById('aiKeyInput'); if(inp) inp.value=key;
+  saveAIKey();
+}
+
+async function testAIKey() {
+  const key=getAIKey();
+  if(!key) return showToast('No API key set','warn');
+  setKeyStatus('testing','⏳ Testing...');
+  try {
+    const r=await callClaude([{role:'user',content:'Reply: OK'}],'Reply only OK',10);
+    if(r){setKeyStatus('valid','✅ Connection confirmed!');updateAIStatus(true);showToast('API key working ✓','success');}
+  } catch(e) {
+    if(e.message.includes('rate')||e.message.includes('429')){setKeyStatus('valid','✅ Key valid (rate limited)');updateAIStatus(true);}
+    else{setKeyStatus('invalid',`❌ ${e.message}`);updateAIStatus(false);}
+  }
+}
+
+function updateAIStatus(online) {
+  const dot=document.getElementById('aiDot');
+  const txt=document.getElementById('aiStatus');
+  if(!dot||!txt) return;
+  const color=online?'var(--success)':'var(--dim)';
+  dot.style.background=color;
+  txt.innerHTML=`<span id="aiDot" style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block"></span> ${online?'Online':'Offline — add API key'}`;
+}
+
+async function callClaude(messages, system='', maxTokens=1500) {
+  const key=getAIKey();
+  if(!key) throw new Error('No API key. Add your Claude API key in the AI Assistant panel.');
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:maxTokens,system,messages}),
+    });
+  } catch(ne) { throw new Error('Network error — check your internet connection.'); }
+  let data;
+  try { data=await res.json(); } catch { throw new Error(`Server returned invalid response (HTTP ${res.status})`); }
+  if(!res.ok) {
+    const msg=data?.error?.message||'';
+    if(res.status===401){updateAIStatus(false);throw new Error('Invalid API key. Check and re-save it.');}
+    if(res.status===429) throw new Error('Rate limit — wait 30 seconds and try again.');
+    if(res.status===529||res.status===503) throw new Error('Anthropic servers overloaded — try again shortly.');
+    throw new Error(msg||`API error (HTTP ${res.status})`);
+  }
+  const text=data?.content?.[0]?.text;
+  if(!text) throw new Error('Empty response from Claude — try again.');
+  return text;
+}
+
+function buildSystemPrompt() {
+  const totalValue=parts.reduce((s,p)=>s+((p.stock||0)*(p.priceKsh||p.price_ksh||0)),0);
+  const low=parts.filter(p=>(p.stock||0)>0&&(p.stock||0)<=(p.minStock||1));
+  const out=parts.filter(p=>(p.stock||0)===0);
+  const invRevenue=invoices.filter(i=>i.type==='invoice').reduce((s,i)=>s+(i.grand||0),0);
+  return `You are PRINTEX AI, the intelligent business assistant for Printex Engineers Limited — a professional printing machinery parts supplier in Nairobi, Kenya.
+
+LIVE DATA (${new Date().toLocaleDateString('en-KE')}):
+- Parts: ${parts.length} total | Value: KSH ${Math.round(totalValue).toLocaleString()}
+- Low stock: ${low.length} items | Out of stock: ${out.length} items
+- Invoices: ${invoices.length} total | Revenue: KSH ${Math.round(invRevenue).toLocaleString()}
+${low.length?`LOW STOCK: ${low.slice(0,5).map(p=>`${p.partNum||p.part_num}(${p.stock})`).join(', ')}`:''} 
+${out.length?`OUT OF STOCK: ${out.slice(0,5).map(p=>p.partNum||p.part_num).join(', ')}`:''} 
+
+PAYMENT METHODS: Till 4977712 | Paybill 880100 Acc 051501 | NCBA 3026970037 SWIFT CBAFKENX
+RULES: Always use KSH. Be professional. Proactively mention stock alerts.`;
+}
+
+function initAIPage() {
+  const key=getAIKey();
+  const ki=document.getElementById('aiKeyInput'); if(ki&&key) ki.value=key;
+  const si=document.getElementById('settingsApiKey'); if(si&&key) si.value=key;
+  updateAIStatus(!!key);
+  renderAIContext();
+  const msgs=document.getElementById('aiMessages');
+  if(msgs&&msgs.children.length===0) showWelcomeMessage();
+  if(aiAlertTimer) clearInterval(aiAlertTimer);
+  aiAlertTimer=setInterval(()=>{
+    const c=parts.filter(p=>(p.stock||0)===0).length+parts.filter(p=>(p.stock||0)>0&&(p.stock||0)<=(p.minStock||1)).length;
+    const b=document.getElementById('aiBadge');
+    if(b){b.style.display=c>0?'inline':'none';b.textContent=c;b.style.background=parts.filter(p=>p.stock===0).length>0?'var(--danger)':'var(--warn)';}
+    renderAIContext();
+  },30000);
+}
+
+function showWelcomeMessage() {
+  const low=parts.filter(p=>(p.stock||0)>0&&(p.stock||0)<=(p.minStock||1)).length;
+  const out=parts.filter(p=>(p.stock||0)===0).length;
+  const alert=(low+out)>0?`\n\n⚠️ **Alert:** ${low} low stock, ${out} out of stock.`:'\n\n✅ All inventory levels healthy.';
+  appendAIMessage('bot',`👋 **Hello! I\'m Printex AI.**\n\nI have real-time access to your **${parts.length} parts** and **${invoices.length} invoices**.${alert}\n\n**I can:** search inventory, add parts, create invoices, research prices, give business insights.\n\n**Add your Claude API key** to unlock the full AI. How can I help?`);
+}
+
+function renderAIContext() {
+  const el=document.getElementById('aiContextStats');
+  if(!el) return;
+  const low=parts.filter(p=>(p.stock||0)>0&&(p.stock||0)<=(p.minStock||1)).length;
+  const out=parts.filter(p=>(p.stock||0)===0).length;
+  el.innerHTML=[
+    {num:parts.length,label:'Parts',color:'var(--accent)'},
+    {num:invoices.length,label:'Invoices',color:'var(--gold)'},
+    {num:`<span style="color:var(--warn)">${low}</span>`,label:'Low Stock',color:'var(--warn)'},
+    {num:`<span style="color:var(--danger)">${out}</span>`,label:'Out of Stock',color:'var(--danger)'},
+  ].map(i=>`<div class="ai-ctx-item"><div class="ai-ctx-num">${i.num}</div><div class="ai-ctx-label">${i.label}</div></div>`).join('');
+}
+
+function handleAIFile(input) {
+  const file=input.files[0]; if(!file) return;
+  const bar=document.getElementById('aiFileBar');
+  const nameEl=document.getElementById('aiFileName');
+  if(nameEl) nameEl.textContent=`${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  if(bar) bar.style.display='flex';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    if(file.type.startsWith('image/')) aiFileData={name:file.name,type:'image',content:e.target.result,mediaType:file.type};
+    else aiFileData={name:file.name,type:'text',content:e.target.result.slice(0,8000)};
+    showToast(`File attached: ${file.name}`,'success');
+  };
+  if(file.type.startsWith('image/')) reader.readAsDataURL(file);
+  else reader.readAsText(file);
+}
+
+function removeAIFile() {
+  aiFileData=null;
+  const b=document.getElementById('aiFileBar'); if(b) b.style.display='none';
+  const i=document.getElementById('aiFileInput'); if(i) i.value='';
+  const n=document.getElementById('aiFileName'); if(n) n.textContent='No file selected';
+}
+
+async function sendAI() {
+  const input=document.getElementById('aiInput');
+  const msg=(input?.value||'').trim();
+  if(!msg&&!aiFileData) return;
+  appendAIMessage('user',msg||(aiFileData?`[File: ${aiFileData.name}]`:''));
+  if(input){input.value='';input.style.height='auto';}
+  const userContent=[];
+  if(aiFileData?.type==='image') userContent.push({type:'image',source:{type:'base64',media_type:aiFileData.mediaType,data:aiFileData.content.split(',')[1]}});
+  if(aiFileData?.type==='text') userContent.push({type:'text',text:`[FILE: ${aiFileData.name}]\n${aiFileData.content}\n\nUser: ${msg}`});
+  else userContent.push({type:'text',text:msg});
+  aiHistory.push({role:'user',content:userContent});
+  if(aiFileData) removeAIFile();
+
+  // Payment intent quick intercept (works without API key)
+  if(!getAIKey()&&handleAIPaymentIntent(msg)){
+    appendAIMessage('bot','💳 I opened the payment tool for you! Add your Claude API key to unlock the full AI assistant.');
+    aiHistory.push({role:'assistant',content:'Opened payment tool.'});
+    return;
+  }
+
+  const typingId=showTyping();
+  try {
+    const reply=await callClaude(aiHistory,buildSystemPrompt(),2000);
+    removeTyping(typingId);
+    const{cleanText,actions}=parseAIActions(reply);
+    appendAIMessage('bot',cleanText);
+    aiHistory.push({role:'assistant',content:reply});
+    for(const a of actions) await executeAIAction(a);
+    updateAIStatus(true);
+    renderAIContext();
+    if(aiHistory.length>40) aiHistory=aiHistory.slice(-40);
+  } catch(e) {
+    removeTyping(typingId);
+    appendAIMessage('error',`❌ **Error:** ${e.message}`);
+    updateAIStatus(false);
+  }
+}
+
+function aiQuick(prompt){
+  const input=document.getElementById('aiInput');
+  if(input) input.value=prompt;
+  sendAI();
+}
+
+function parseAIActions(text){
+  const actions=[];
+  const cleanText=text.replace(/```json-action\n([\s\S]*?)```/g,(_,json)=>{
+    try{actions.push(JSON.parse(json));}catch{}
+    return '';
+  }).trim();
+  return{cleanText,actions};
+}
+
+async function executeAIAction(action){
+  try{
+    if(action.action==='add_part'){
+      const d=action.data;
+      if(!d.partNum||!d.desc) return;
+      const np={partNum:d.partNum,desc:d.desc,category:d.category||'G',stock:parseInt(d.stock)||0,minStock:parseInt(d.minStock)||1,priceKsh:parseFloat(d.priceKsh)||0,supplier:d.supplier||'',location:d.location||'',image:null};
+      const id=await dbPut('parts',np); np.id=id; parts.push(np);
+      renderInventory(); logAIAction(`➕ Added: ${np.partNum}`); showToast(`AI added: ${np.partNum}`,'success');
+    } else if(action.action==='show_alert'){
+      showToast(action.data.message,action.data.type||'warn');
+    } else if(action.action==='open_payment_tool'){
+      const t=action.data.tool||action.data.type;
+      if(PAYMENT_INFO&&PAYMENT_INFO[t]) openPayToolModal(t);
+    } else if(action.action==='navigate_to'){
+      const m={inventory:1,invoices:2,'new-invoice':3,ai:5,settings:6};
+      const ni=document.querySelectorAll('.nav-item');
+      const idx=m[action.data.page];
+      if(idx!==undefined&&ni[idx]) showPage(action.data.page==='new-invoice'?'createInvoice':action.data.page,ni[idx]);
+    }
+  } catch(e){console.error('AI action error:',e);}
+}
+
+function appendAIMessage(role,text){
+  const msgs=document.getElementById('aiMessages'); if(!msgs) return;
+  const isUser=role==='user',isError=role==='error';
+  const div=document.createElement('div'); div.className=`ai-msg ${isUser?'user':'bot'}`;
+  const av=document.createElement('div'); av.className=`ai-avatar ${isUser?'user':'bot'}`;
+  av.innerHTML=isUser?(currentUser?.name?.[0]?.toUpperCase()||'U'):'🤖';
+  const bbl=document.createElement('div'); bbl.className=`ai-bubble ${isUser?'user':isError?'error':'bot'}`;
+  bbl.innerHTML=formatAIText(text);
+  div.appendChild(av); div.appendChild(bbl); msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function appendActionButtons(buttons){
+  const msgs=document.getElementById('aiMessages'); if(!msgs) return;
+  const wrap=document.createElement('div'); wrap.style.cssText='padding-left:40px;display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px';
+  wrap.innerHTML=buttons.map(b=>`<button class="ai-action-btn" onclick="${b.onclick}">${b.label}</button>`).join('');
+  msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function showTyping(){
+  const msgs=document.getElementById('aiMessages'); if(!msgs) return null;
+  const id='typing_'+Date.now();
+  const div=document.createElement('div'); div.id=id; div.className='ai-msg bot';
+  div.innerHTML=`<div class="ai-avatar bot">🤖</div><div class="ai-bubble bot" style="padding:0"><div class="ai-typing"><div class="ai-dot-anim"></div><div class="ai-dot-anim"></div><div class="ai-dot-anim"></div></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight; return id;
+}
+
+function removeTyping(id){ if(id){ const el=document.getElementById(id); if(el) el.remove(); } }
+
+function formatAIText(text){
+  if(!text) return '';
+  let html=esc(text)
+    .replace(/```[\w-]*\n?([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/^### (.+)$/gm,'<h4>$1</h4>')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^[•\-] (.+)$/gm,'<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/\n\n/g,'</p><p style="margin:6px 0">')
+    .replace(/\n/g,'<br/>');
+  html=html.replace(/(<li>.*?<\/li>)+/gs,m=>`<ul>${m}</ul>`);
+  return `<p style="margin:0">${html}</p>`;
+}
+
+function logAIAction(text){
+  aiActionLogArr.unshift({text,ts:Date.now()});
+  if(aiActionLogArr.length>10) aiActionLogArr.pop();
+  const el=document.getElementById('aiActionLog');
+  if(el) el.innerHTML=aiActionLogArr.map(a=>`<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:4px"><span>${esc(a.text)}</span><span style="color:var(--dim);font-size:10px;white-space:nowrap">${new Date(a.ts).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')||'No actions yet';
+}
+
+function clearAIChat(){
+  if(!confirm('Clear conversation?')) return;
+  aiHistory=[]; const msgs=document.getElementById('aiMessages');
+  if(msgs) msgs.innerHTML='';
+  showWelcomeMessage(); showToast('Conversation cleared','success');
+}
+
+function exportAIChat(){
+  if(!aiHistory.length) return showToast('No conversation to export','warn');
+  let text=`PRINTEX AI CONVERSATION\n${new Date().toLocaleString('en-KE')}\n${'='.repeat(40)}\n\n`;
+  aiHistory.forEach(m=>{ const r=m.role==='user'?'YOU':'AI'; const c=Array.isArray(m.content)?m.content.find(x=>x.type==='text')?.text||'':m.content; text+=`[${r}]\n${c}\n\n`; });
+  downloadFile(text,`printex-ai-${Date.now()}.txt`,'text/plain');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SETTINGS + THEME
+// ═══════════════════════════════════════════════════════════════════
+function applySettings() {
+  const theme=settings.theme||'dark';
+  document.documentElement.setAttribute('data-theme',theme);
+  const dt=document.getElementById('darkToggle');
+  if(dt) dt.classList.toggle('on',theme==='dark');
+  const vs=document.getElementById('vatSetting'); if(vs) vs.value=settings.vat||16;
+  const cs=document.getElementById('currSetting'); if(cs) cs.value=settings.currency||'KSH';
+}
+
+async function saveSetting(key,val){ settings[key]=val; await dbPut('settings',{key,value:val}); }
+
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  const dt=document.getElementById('darkToggle'); if(dt) dt.classList.toggle('on',next==='dark');
+  saveSetting('theme',next);
+}
+
+async function resetToDefault(){
+  if(!confirm('Reset all inventory to the default 128 parts? Your custom parts will be removed.')) return;
+  await dbClear('parts');
+  for(const p of DEFAULT_PARTS) await dbPut('parts',{...p,image:null});
+  parts=(await dbGet('parts')||[]);
+  renderInventory(); renderDashboard();
+  showToast('Inventory reset to default 128 parts','success');
+}
+
+async function clearAllData(){
+  if(!confirm('⚠️ Delete ALL data (parts, invoices, activity)? This CANNOT be undone.')) return;
+  await dbClear('parts'); await dbClear('invoices'); await dbClear('activity'); await dbClear('settings');
+  parts=[]; invoices=[]; activityLog=[]; settings={};
+  for(const p of DEFAULT_PARTS) await dbPut('parts',{...p,image:null});
+  parts=await dbGet('parts')||[];
+  renderInventory(); renderDashboard(); renderInvoiceList();
+  showToast('All data cleared and reset','warn');
+}
+
+function exportBackup(){
+  const backup={exportDate:new Date().toISOString(),parts:parts.map(p=>({...p,image:p.image?'[BASE64]':null})),invoices,settings,version:3};
+  downloadFile(JSON.stringify(backup,null,2),'printex_backup.json','application/json');
+  showToast('Backup exported','success');
+}
+
+async function importBackup(event){
+  const file=event.target.files[0]; if(!file) return;
+  try{
+    const text=await file.text();
+    const data=JSON.parse(text);
+    if(data.parts){ await dbClear('parts'); for(const p of data.parts) await dbPut('parts',p); parts=await dbGet('parts')||[]; }
+    if(data.invoices){ await dbClear('invoices'); for(const inv of data.invoices) await dbPut('invoices',inv); invoices=await dbGet('invoices')||[]; }
+    renderInventory(); renderDashboard(); renderInvoiceList();
+    showToast(`Imported: ${parts.length} parts, ${invoices.length} invoices`,'success');
+  } catch(e){ showToast('Import failed: '+e.message,'error'); }
+}
+
+function loadFirebaseSettingsFields(){ /* no-op — Firebase removed */ }
+function saveFirebaseConfig(){ showToast('Firebase removed — using local auth only','warn'); }
+function clearFirebaseConfig(){ showToast('Firebase removed — nothing to clear','warn'); }
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function openModal(id){ const el=document.getElementById(id); if(el) el.classList.add('open'); }
+function closeModal(id){ const el=document.getElementById(id); if(el) el.classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+function showToast(msg,type='success'){
+  const zone=document.getElementById('toastZone'); if(!zone) return;
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const icons={success:'fa-check-circle',error:'fa-exclamation-circle',warn:'fa-triangle-exclamation'};
+  t.innerHTML=`<i class="fa ${icons[type]||'fa-info-circle'}" style="color:var(--${type==='success'?'success':type==='error'?'danger':'warn'})"></i>${esc(String(msg))}`;
+  zone.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+async function logActivity(text,type='info'){
+  try{
+    const entry={text,type,ts:Date.now()};
+    const id=await dbPut('activity',entry); entry.id=id; activityLog.push(entry);
+  }catch{}
+}
+
+function esc(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function setBottomNav(page){
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('bnav-'+page); if(el) el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+const pageTitles={dashboard:'Dashboard',inventory:'Inventory',invoices:'Invoices',createInvoice:'New Invoice',reports:'Reports',ai:'AI Assistant',settings:'Settings'};
+
+function showPage(id,navEl){
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');});
+  const pg=document.getElementById('page-'+id);
+  if(pg){pg.classList.add('active');pg.classList.add('fade-in');setTimeout(()=>pg.classList.remove('fade-in'),400);}
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(navEl) navEl.classList.add('active');
+  const tb=document.getElementById('pageTitleBar'); if(tb) tb.textContent=pageTitles[id]||id;
+  closeSidebar();
+  if(id==='ai') initAIPage();
+  if(id==='settings') loadFirebaseSettingsFields();
+  const bnavMap={dashboard:'dashboard',inventory:'inventory',invoices:'invoices',createInvoice:'invoices',ai:'ai',reports:'settings',settings:'settings'};
+  setBottomNav(bnavMap[id]||id);
+}
+
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'); if(sb) sb.classList.toggle('open');
+  const ov=document.getElementById('sidebarOverlay'); if(ov) ov.style.display=document.getElementById('sidebar')?.classList.contains('open')?'block':'none';
+}
+function closeSidebar(){
+  const sb=document.getElementById('sidebar'); if(sb) sb.classList.remove('open');
+  const ov=document.getElementById('sidebarOverlay'); if(ov) ov.style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Pre-load API key
+  _aiKeyMemory = localStorage.getItem('printex_ai_key') || '';
+
+  // Bottom nav low badge update helper
+  function updateBottomNavBadge(){
+    const lc=parts.filter(p=>(p.stock||0)===0).length+parts.filter(p=>(p.stock||0)>0&&(p.stock||0)<=(p.minStock||1)).length;
+    const bb=document.getElementById('bnavLowBadge');
+    if(bb){bb.style.display=lc>0?'block':'none';bb.textContent=lc;}
+  }
+
+  initApp().then(()=>{
+    // Sync API key to UI fields after app loads
+    const saved=getAIKey();
+    const ki=document.getElementById('aiKeyInput'); if(ki&&saved) ki.value=saved;
+    const si=document.getElementById('settingsApiKey'); if(si&&saved) si.value=saved;
+    if(saved) updateAIStatus(true);
+    updateBottomNavBadge();
+  }).catch(e=>{ console.error('Boot error:',e); checkLogin(); });
+});
+</script>
+</body>
+</html>
+TAIL_EOF
+echo "Tail appended, checking file..."
+tail -5 /home/claude/printex-live/index.html
+wc -l /home/claude/printex-live/index.html
+Output
+
+Tail appended, checking file...
+  }).catch(e=>{ console.error('Boot error:',e); checkLogin(); });
+});
+</script>
+</body>
+</html>
+
+
