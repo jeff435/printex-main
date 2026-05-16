@@ -1712,8 +1712,10 @@ async function doSignup() {
 }
 
 function doQuickLogin() {
-  document.getElementById('loginEmail').value = 'admin';
-  document.getElementById('loginPass').value = 'admin123';
+  const emailEl = document.getElementById('loginEmail');
+  const passEl = document.getElementById('loginPass');
+  if (emailEl) emailEl.value = 'admin';
+  if (passEl) passEl.value = 'admin123';
   doLogin();
 }
 
@@ -1734,14 +1736,23 @@ async function checkLogin() {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      console.error('Verify JSON parse error:', e);
+      return doLogout();
+    }
+    
     if (data.valid) {
       currentUser = { ...data.user, name: data.user.fullName };
       showApp();
     } else {
+      console.warn('Token not valid according to server');
       doLogout();
     }
   } catch(e) {
+    console.error('checkLogin fetch error:', e);
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
   }
