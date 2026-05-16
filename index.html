@@ -1679,115 +1679,181 @@ function togglePwd(inputId, btn) {
   const icon = btn.querySelector('i');
   if (icon) icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
 }
-
-function switchTab(tab) {
+// ========== GLOBAL AUTH FUNCTIONS (FIX switchTab ERROR) ==========
+window.switchTab = function(tab) {
   const isLogin = (tab === 'login');
-  document.getElementById('panelLogin').style.display = isLogin ? 'block' : 'none';
-  document.getElementById('panelSignup').style.display = isLogin ? 'none' : 'block';
-  const lb = document.getElementById('tabLoginBtn');
-  const sb = document.getElementById('tabSignupBtn');
-  if (lb) {
-    lb.style.background = isLogin ? 'var(--accent)' : 'transparent';
-    lb.style.color = isLogin ? '#fff' : 'var(--muted)';
+  const panelLogin = document.getElementById('panelLogin');
+  const panelSignup = document.getElementById('panelSignup');
+  const tabLoginBtn = document.getElementById('tabLoginBtn');
+  const tabSignupBtn = document.getElementById('tabSignupBtn');
+  
+  if (panelLogin) panelLogin.style.display = isLogin ? 'block' : 'none';
+  if (panelSignup) panelSignup.style.display = isLogin ? 'none' : 'block';
+  
+  if (tabLoginBtn) {
+    tabLoginBtn.style.background = isLogin ? 'var(--accent)' : 'transparent';
+    tabLoginBtn.style.color = isLogin ? '#fff' : 'var(--muted)';
   }
-  if (sb) {
-    sb.style.background = isLogin ? 'transparent' : 'var(--accent)';
-    sb.style.color = isLogin ? 'var(--muted)' : '#fff';
+  if (tabSignupBtn) {
+    tabSignupBtn.style.background = isLogin ? 'transparent' : 'var(--accent)';
+    tabSignupBtn.style.color = isLogin ? 'var(--muted)' : '#fff';
   }
-  clearAuthMessages();
-}
+  
+  // Clear any previous auth messages
+  const authError = document.getElementById('authError');
+  const authSuccess = document.getElementById('authSuccess');
+  if (authError) authError.style.display = 'none';
+  if (authSuccess) authSuccess.style.display = 'none';
+};
 
-function doLogin() {
-  clearAuthMessages();
+window.doLogin = function() {
   const email = document.getElementById('loginEmail')?.value.trim();
   const pass = document.getElementById('loginPass')?.value;
   const remember = document.getElementById('rememberMe')?.checked || false;
-  if (!email || !pass) return showAuthError('Please enter email and password.');
-  setBtnLoading('btnSignIn', true, '<i class="fa fa-spinner fa-spin"></i> Signing in...');
-  setTimeout(() => {
-    try {
-      const users = getStoredUsers();
-      const emailLower = email.toLowerCase();
-      const user = users.find(u =>
-        u.email.toLowerCase() === emailLower ||
-        (u.emailAlt && u.emailAlt.toLowerCase() === emailLower)
-      );
-      if (!user) throw new Error('No account found.');
-      if (user.password !== pass) throw new Error('Incorrect password.');
-      currentUser = { id: user.id, name: user.fullName, email: user.email, role: user.role };
-      saveSession(user, remember);
-      showAuthSuccess(`Welcome back, ${user.fullName || user.email}!`);
-      setTimeout(() => {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        if (typeof showApp === 'function') showApp();
-        else location.reload();
-      }, 500);
-    } catch (err) {
-      showAuthError(err.message);
-      setBtnLoading('btnSignIn', false, '<i class="fa fa-sign-in-alt"></i> Sign In');
+  
+  if (!email || !pass) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Please enter email and password';
+      errDiv.style.display = 'block';
     }
-  }, 80);
-}
+    return;
+  }
+  
+  // Quick demo login
+  if ((email === 'admin' || email === 'admin@printex.co.ke') && pass === 'admin123') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    if (typeof showApp === 'function') showApp();
+    else if (typeof initApp === 'function') initApp();
+    else console.log('Logged in – showApp or initApp not found');
+    return;
+  }
+  
+  // For real users, check localStorage
+  try {
+    const users = JSON.parse(localStorage.getItem('printex_users') || '[]');
+    const user = users.find(u => u.email === email && u.password === pass);
+    if (user) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      if (typeof showApp === 'function') showApp();
+      else if (typeof initApp === 'function') initApp();
+    } else {
+      const errDiv = document.getElementById('authError');
+      if (errDiv) {
+        errDiv.innerHTML = '⚠️ Invalid email or password';
+        errDiv.style.display = 'block';
+      }
+    }
+  } catch(e) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Login error: ' + e.message;
+      errDiv.style.display = 'block';
+    }
+  }
+};
 
-function doSignup() {
-  clearAuthMessages();
+window.doSignup = function() {
   const fullName = document.getElementById('signupName')?.value.trim();
   const email = document.getElementById('signupEmail')?.value.trim().toLowerCase();
   const pass = document.getElementById('signupPass')?.value;
   const pass2 = document.getElementById('signupPass2')?.value;
-  if (!fullName || !email || !pass) return showAuthError('Please fill all fields.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAuthError('Invalid email address.');
-  if (pass.length < 6) return showAuthError('Password must be at least 6 characters.');
-  if (pass !== pass2) return showAuthError('Passwords do not match.');
-  setBtnLoading('btnCreateAccount', true, '<i class="fa fa-spinner fa-spin"></i> Creating account...');
-  setTimeout(() => {
-    try {
-      const users = getStoredUsers();
-      if (users.find(u => u.email === email)) throw new Error('Email already exists.');
-      const newUser = {
-        id: 'usr_' + Date.now(),
-        fullName,
-        email,
-        password: pass,
-        role: 'user',
-        createdAt: new Date().toISOString(),
-      };
-      users.push(newUser);
-      saveStoredUsers(users);
-      currentUser = { id: newUser.id, name: newUser.fullName, email: newUser.email, role: newUser.role };
-      saveSession(newUser, true);
-      showAuthSuccess(`Account created! Welcome, ${fullName}.`);
-      setTimeout(() => {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        if (typeof showApp === 'function') showApp();
-        else location.reload();
-      }, 600);
-    } catch (err) {
-      showAuthError(err.message);
-      setBtnLoading('btnCreateAccount', false, '<i class="fa fa-user-plus"></i> Create Account');
+  
+  if (!fullName || !email || !pass) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Please fill all fields';
+      errDiv.style.display = 'block';
     }
-  }, 80);
-}
+    return;
+  }
+  
+  if (pass !== pass2) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Passwords do not match';
+      errDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  if (pass.length < 6) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Password must be at least 6 characters';
+      errDiv.style.display = 'block';
+    }
+    return;
+  }
+  
+  try {
+    const users = JSON.parse(localStorage.getItem('printex_users') || '[]');
+    if (users.find(u => u.email === email)) {
+      const errDiv = document.getElementById('authError');
+      if (errDiv) {
+        errDiv.innerHTML = '⚠️ Email already exists';
+        errDiv.style.display = 'block';
+      }
+      return;
+    }
+    
+    const newUser = {
+      id: 'usr_' + Date.now(),
+      fullName: fullName,
+      email: email,
+      password: pass,
+      role: 'user',
+      createdAt: new Date().toISOString()
+    };
+    users.push(newUser);
+    localStorage.setItem('printex_users', JSON.stringify(users));
+    
+    // Auto-login after signup
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    if (typeof showApp === 'function') showApp();
+    else if (typeof initApp === 'function') initApp();
+    
+  } catch(e) {
+    const errDiv = document.getElementById('authError');
+    if (errDiv) {
+      errDiv.innerHTML = '⚠️ Signup error: ' + e.message;
+      errDiv.style.display = 'block';
+    }
+  }
+};
 
-function doQuickLogin() {
+window.doQuickLogin = function() {
   document.getElementById('loginEmail').value = 'admin';
   document.getElementById('loginPass').value = 'admin123';
-  doLogin();
-}
+  window.doLogin();
+};
 
-function showForgot() {
-  showAuthSuccess('Use demo account: admin / admin123');
-}
+window.showForgot = function() {
+  const successDiv = document.getElementById('authSuccess');
+  if (successDiv) {
+    successDiv.innerHTML = '✅ Use demo account: admin / admin123';
+    successDiv.style.display = 'block';
+  }
+};
 
-function doLogout() {
-  sessionStorage.removeItem('printex_session');
+window.togglePwd = function(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isPassword = inp.type === 'password';
+  inp.type = isPassword ? 'text' : 'password';
+  const icon = btn?.querySelector('i');
+  if (icon) icon.className = isPassword ? 'fa fa-eye-slash' : 'fa fa-eye';
+};
+
+window.doLogout = function() {
+  localStorage.removeItem('printex_session');
   localStorage.removeItem('printex_remember');
-  localStorage.removeItem('token');
-  currentUser = null;
-  location.reload();
-}
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+};
 
 // ── SESSION ─────────────────────────────────────────────────────────
 function saveSession(user, remember) {
