@@ -1570,88 +1570,50 @@ async function seedDefaultParts() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// AUTH SYSTEM — 100% Local, localStorage only, zero Firebase
-// ═══════════════════════════════════════════════════════════════════
+// ========== AUTH SYSTEM - SUPABASE BACKEND ==========
 let currentUser = null;
 
-// ── DEFAULT USERS (pre-seeded) ──────────────────────────────────────
-const DEFAULT_USERS = [
-  {
-    id: 'admin_001',
-    fullName: 'Administrator',
-    email: 'admin',               // accepts "admin" OR "admin@printex.co.ke"
-    emailAlt: 'admin@printex.co.ke',
-    password: 'admin123',
-    role: 'admin',
-    createdAt: '2024-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'admin_002',
-    fullName: 'Admin Printex',
-    email: 'admin@printex.co.ke',
-    password: 'admin123',
-    role: 'admin',
-    createdAt: '2024-01-01T00:00:00.000Z',
-  },
-];
-
-// ── USER STORE ──────────────────────────────────────────────────────
-function getStoredUsers() {
-  try {
-    const raw = localStorage.getItem('printex_users');
-    const stored = raw ? JSON.parse(raw) : [];
-    // Always ensure defaults are present (by email)
-    const merged = [...stored];
-    DEFAULT_USERS.forEach(def => {
-      const exists = merged.find(u =>
-        u.email === def.email || u.email === def.emailAlt
-      );
-      if (!exists) merged.push(def);
-    });
-    return merged;
-  } catch {
-    return [...DEFAULT_USERS];
+function switchTab(tab) {
+  const isLogin = (tab === 'login');
+  const panelLogin = document.getElementById('panelLogin');
+  const panelSignup = document.getElementById('panelSignup');
+  const tabLoginBtn = document.getElementById('tabLoginBtn');
+  const tabSignupBtn = document.getElementById('tabSignupBtn');
+  
+  if (panelLogin) panelLogin.style.display = isLogin ? 'block' : 'none';
+  if (panelSignup) panelSignup.style.display = isLogin ? 'none' : 'block';
+  
+  if (tabLoginBtn) {
+    tabLoginBtn.style.background = isLogin ? 'var(--accent)' : 'transparent';
+    tabLoginBtn.style.color = isLogin ? '#fff' : 'var(--muted)';
   }
-}
-
-function saveStoredUsers(users) {
-  localStorage.setItem('printex_users', JSON.stringify(users));
-}
-
-function saveSession(user, remember) {
-  const session = {
-    isLoggedIn: true,
-    id: user.id,
-    name: user.fullName || user.email,
-    email: user.email,
-    role: user.role || 'user',
-  };
-  sessionStorage.setItem('printex_session', JSON.stringify(session));
-  if (remember) {
-    localStorage.setItem('printex_remember', JSON.stringify(session));
+  if (tabSignupBtn) {
+    tabSignupBtn.style.background = isLogin ? 'transparent' : 'var(--accent)';
+    tabSignupBtn.style.color = isLogin ? 'var(--muted)' : '#fff';
   }
-}
-
-function getSession() {
-  try {
-    const s = sessionStorage.getItem('printex_session');
-    if (s) return JSON.parse(s);
-    const r = localStorage.getItem('printex_remember');
-    if (r) return JSON.parse(r);
-  } catch {}
-  return null;
+  
+  const authError = document.getElementById('authError');
+  const authSuccess = document.getElementById('authSuccess');
+  if (authError) authError.style.display = 'none';
+  if (authSuccess) authSuccess.style.display = 'none';
 }
 
 function showAuthError(msg) {
   const el = document.getElementById('authError');
-  if (el) { el.innerHTML = '⚠️ ' + msg; el.style.display = 'block'; }
+  if (el) {
+    el.innerHTML = '⚠️ ' + msg;
+    el.style.display = 'block';
+  }
   const ok = document.getElementById('authSuccess');
   if (ok) ok.style.display = 'none';
 }
 
 function showAuthSuccess(msg) {
   const el = document.getElementById('authSuccess');
-  if (el) { el.innerHTML = '✅ ' + msg; el.style.display = 'block'; }
+  if (el) {
+    el.innerHTML = '✅ ' + msg;
+    el.style.display = 'block';
+  }
   const err = document.getElementById('authError');
   if (err) err.style.display = 'none';
 }
@@ -1676,49 +1638,176 @@ function togglePwd(inputId, btn) {
   if (!inp) return;
   const show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
-  const icon = btn.querySelector('i');
+  const icon = btn?.querySelector('i');
   if (icon) icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
 }
-// ========== GLOBAL AUTH FUNCTIONS (FIX switchTab ERROR) ==========
-window.switchTab = function(tab) {
-  const isLogin = (tab === 'login');
-  const panelLogin = document.getElementById('panelLogin');
-  const panelSignup = document.getElementById('panelSignup');
-  const tabLoginBtn = document.getElementById('tabLoginBtn');
-  const tabSignupBtn = document.getElementById('tabSignupBtn');
-  
-  if (panelLogin) panelLogin.style.display = isLogin ? 'block' : 'none';
-  if (panelSignup) panelSignup.style.display = isLogin ? 'none' : 'block';
-  
-  if (tabLoginBtn) {
-    tabLoginBtn.style.background = isLogin ? 'var(--accent)' : 'transparent';
-    tabLoginBtn.style.color = isLogin ? '#fff' : 'var(--muted)';
-  }
-  if (tabSignupBtn) {
-    tabSignupBtn.style.background = isLogin ? 'transparent' : 'var(--accent)';
-    tabSignupBtn.style.color = isLogin ? 'var(--muted)' : '#fff';
-  }
-  
-  // Clear any previous auth messages
-  const authError = document.getElementById('authError');
-  const authSuccess = document.getElementById('authSuccess');
-  if (authError) authError.style.display = 'none';
-  if (authSuccess) authSuccess.style.display = 'none';
-};
 
-window.doLogin = function() {
+async function doLogin() {
+  clearAuthMessages();
+  
   const email = document.getElementById('loginEmail')?.value.trim();
   const pass = document.getElementById('loginPass')?.value;
   const remember = document.getElementById('rememberMe')?.checked || false;
   
   if (!email || !pass) {
-    const errDiv = document.getElementById('authError');
-    if (errDiv) {
-      errDiv.innerHTML = '⚠️ Please enter email and password';
-      errDiv.style.display = 'block';
-    }
+    showAuthError('Please enter email and password');
     return;
   }
+  
+  setBtnLoading('btnSignIn', true, 'Signing in...');
+  
+  try {
+    const response = await fetch('https://printex-backend-new.onrender.com/api/auth/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await response.json();
+    
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    
+    if (data.success) {
+      localStorage.setItem('token', data.token);
+      currentUser = data.user;
+      
+      const session = {
+        isLoggedIn: true,
+        id: data.user.id,
+        name: data.user.fullName || data.user.email,
+        email: data.user.email,
+        role: 'user'
+      };
+      sessionStorage.setItem('printex_session', JSON.stringify(session));
+      if (remember) localStorage.setItem('printex_remember', JSON.stringify(session));
+      
+      showAuthSuccess('Welcome back!');
+      setTimeout(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        if (typeof loadUserData === 'function') loadUserData();
+        else if (typeof showApp === 'function') showApp();
+      }, 500);
+    }
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    setBtnLoading('btnSignIn', false, 'Sign In');
+  }
+}
+
+async function doSignup() {
+  clearAuthMessages();
+  
+  const fullName = document.getElementById('signupName')?.value.trim();
+  const email = document.getElementById('signupEmail')?.value.trim().toLowerCase();
+  const pass = document.getElementById('signupPass')?.value;
+  const pass2 = document.getElementById('signupPass2')?.value;
+  
+  if (!fullName || !email || !pass) {
+    showAuthError('Please fill all fields');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showAuthError('Please enter a valid email address');
+    return;
+  }
+  if (pass.length < 6) {
+    showAuthError('Password must be at least 6 characters');
+    return;
+  }
+  if (pass !== pass2) {
+    showAuthError('Passwords do not match');
+    return;
+  }
+  
+  setBtnLoading('btnCreateAccount', true, 'Creating account...');
+  
+  try {
+    const response = await fetch('https://printex-backend-new.onrender.com/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass, fullName })
+    });
+    const data = await response.json();
+    
+    if (!response.ok) throw new Error(data.error || 'Signup failed');
+    
+    if (data.success) {
+      localStorage.setItem('token', data.token);
+      currentUser = data.user;
+      
+      const session = {
+        isLoggedIn: true,
+        id: data.user.id,
+        name: data.user.fullName || data.user.email,
+        email: data.user.email,
+        role: 'user'
+      };
+      sessionStorage.setItem('printex_session', JSON.stringify(session));
+      
+      showAuthSuccess('Account created! Welcome, ' + fullName);
+      setTimeout(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        if (typeof loadUserData === 'function') loadUserData();
+        else if (typeof showApp === 'function') showApp();
+      }, 1000);
+    }
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    setBtnLoading('btnCreateAccount', false, 'Create Account');
+  }
+}
+
+function doQuickLogin() {
+  document.getElementById('loginEmail').value = 'admin';
+  document.getElementById('loginPass').value = 'admin123';
+  doLogin();
+}
+
+function showForgot() {
+  showAuthSuccess('Use admin / admin123 or sign up');
+}
+
+function doLogout() {
+  localStorage.removeItem('token');
+  sessionStorage.removeItem('printex_session');
+  localStorage.removeItem('printex_remember');
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function checkLogin() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    document.getElementById('loginScreen').style.display = 'flex';
+    return;
+  }
+  
+  try {
+    const response = await fetch('https://printex-backend-new.onrender.com/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    
+    if (data.valid) {
+      currentUser = data.user;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      if (typeof loadUserData === 'function') loadUserData();
+      else if (typeof showApp === 'function') showApp();
+    } else {
+      localStorage.removeItem('token');
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+  } catch(e) {
+    localStorage.removeItem('token');
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+}
   
   // Quick demo login
   if ((email === 'admin' || email === 'admin@printex.co.ke') && pass === 'admin123') {
